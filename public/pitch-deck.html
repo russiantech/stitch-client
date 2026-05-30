@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stitch — OPay Innovation Challenge 2026</title>
+<style>
+:root {
+  --primary: #00B875;
+  --secondary: #1a1a2e;
+  --accent: #f38207;
+  --light: #f8fafc;
+  --text: #334155;
+  --text-light: #64748b;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  line-height: 1.6;
+  background: #fff;
+}
+.slide {
+  min-height: 100vh;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  border-bottom: 1px solid #e2e8f0;
+  page-break-after: always;
+}
+.slide:last-child { border-bottom: none; }
+
+/* Title Slide */
+.title-slide {
+  background: linear-gradient(135deg, var(--secondary) 0%, #16213e 100%);
+  color: white;
+  text-align: center;
+  border-radius: 0;
+}
+.title-slide h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+}
+.title-slide .subtitle {
+  font-size: 1.4rem;
+  opacity: 0.9;
+  margin-bottom: 40px;
+  font-weight: 300;
+}
+.title-slide .meta {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 60px;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+/* Content Slides */
+h2 {
+  font-size: 2.4rem;
+  color: var(--secondary);
+  margin-bottom: 32px;
+  font-weight: 700;
+}
+h3 {
+  font-size: 1.3rem;
+  color: var(--primary);
+  margin: 24px 0 12px;
+  font-weight: 600;
+}
+p {
+  font-size: 1.15rem;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.highlight {
+  background: linear-gradient(120deg, rgba(0,184,117,0.15) 0%, rgba(0,184,117,0.15) 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 32px 0;
+}
+.stat-card {
+  background: var(--light);
+  padding: 28px;
+  border-radius: 12px;
+  text-align: center;
+  border-left: 4px solid var(--primary);
+}
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--secondary);
+  display: block;
+}
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 8px;
+}
+
+/* Problem List */
+.problem-list {
+  list-style: none;
+  margin: 24px 0;
+}
+.problem-list li {
+  padding: 16px 0;
+  padding-left: 36px;
+  position: relative;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.problem-list li::before {
+  content: "✕";
+  position: absolute;
+  left: 0;
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Solution List */
+.solution-list {
+  list-style: none;
+  margin: 24px 0;
+}
+.solution-list li {
+  padding: 16px 0;
+  padding-left: 36px;
+  position: relative;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.solution-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 1rem;
+}
+th {
+  background: var(--secondary);
+  color: white;
+  padding: 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+tr:nth-child(even) { background: var(--light); }
+
+/* Quote */
+.quote {
+  background: var(--light);
+  border-left: 4px solid var(--primary);
+  padding: 24px 28px;
+  margin: 28px 0;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--text-light);
+  border-radius: 0 8px 8px 0;
+}
+.quote-author {
+  display: block;
+  margin-top: 12px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--secondary);
+  font-size: 0.95rem;
+}
+
+/* Two Column */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 24px 0;
+}
+.col-box {
+  background: var(--light);
+  padding: 28px;
+  border-radius: 12px;
+}
+.col-box h4 {
+  color: var(--primary);
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+/* Footer */
+.slide-footer {
+  margin-top: auto;
+  padding-top: 40px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Print Styles */
+@media print {
+  .slide { min-height: auto; padding: 40px 30px; page-break-after: always; }
+  .title-slide { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media (max-width: 768px) {
+  .title-slide h1 { font-size: 2.5rem; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .slide { padding: 40px 20px; }
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide title-slide">
+  <div class="badge">OPay Innovation Challenge 2026</div>
+  <h1>STITCH</h1>
+  <p class="subtitle">The Digital Infrastructure for Nigeria's Laundry & Fashion Economy</p>
+  <p style="opacity: 0.7; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+    Transforming informal SMEs from notebook operations to predictable digital revenue through vertical SaaS and embedded fintech.
+  </p>
+  <div class="meta">
+    <span>Team: Stitch</span>
+    <span>Category: Digital Tools for SMEs</span>
+    <span>June 2026</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: THE PROBLEM -->
+<div class="slide">
+  <h2>The Problem: A ₦3.2 Trillion Market Running on Memory</h2>
+  <p>
+    Nigeria's laundry and fashion sector serves <span class="highlight">millions of working-class Nigerians weekly</span>, yet operates almost entirely in the informal economy. While fintech digitized payments and e-commerce digitized retail, this sector remains a <span class="highlight">digital desert</span>.
+  </p>
+  <ul class="problem-list">
+    <li><strong>Revenue Leakage:</strong> Business owners lose 30–40% of potential revenue to missed orders, pricing disputes, and forgotten pickups — all tracked in tattered notebooks or WhatsApp chats.</li>
+    <li><strong>Cash Flow Anxiety:</strong> Owners collect payment after service, leaving them unable to buy chemicals in bulk, hire help, or plan beyond today.</li>
+    <li><strong>Zero Customer Trust:</strong> Customers have no visibility on pricing, order status, or delivery timelines. They switch providers monthly.</li>
+    <li><strong>No Software Innovation:</strong> Unlike food (Chowdeck), mobility (Bolt), or beauty, laundry and bespoke fashion have seen virtually zero vertical software investment.</li>
+  </ul>
+  <div class="quote">
+    "Every morning, my mother opened a tattered notebook. By evening, three customers had argued over prices she forgot she quoted. She never knew how much she would earn tomorrow."
+    <span class="quote-author">— Real operator in Lagos</span>
+  </div>
+</div>
+
+<!-- SLIDE 3: THE SOLUTION -->
+<div class="slide">
+  <h2>The Solution: Stitch</h2>
+  <p style="font-size: 1.25rem; margin-bottom: 32px;">
+    Stitch is the <span class="highlight">first vertical SaaS platform</span> purpose-built for Africa's laundry and fashion SMEs. Think of it as the <strong>"Shopify for Drycleaners"</strong> — with embedded fintech.
+  </p>
+  <div class="two-col">
+    <div class="col-box">
+      <h4>🏪 For Business Owners (B2B SaaS)</h4>
+      <ul class="solution-list" style="margin: 0;">
+        <li>Digital order intake & garment-level tracking</li>
+        <li>Dynamic pricing by fabric, service & delivery zone</li>
+        <li>Staff task queues & driver logistics</li>
+        <li><strong>Subscription engine:</strong> customers prepay for monthly "laundry units"</li>
+        <li>Customer CRM, loyalty & automated notifications</li>
+      </ul>
+    </div>
+    <div class="col-box">
+      <h4>📱 For Customers (B2C Experience)</h4>
+      <ul class="solution-list" style="margin: 0;">
+        <li>Mobile-first scheduling & live order tracking</li>
+        <li>Volume plan subscriptions (e.g., "50 shirts/month")</li>
+        <li>Transparent pricing — no more haggling</li>
+        <li>Seamless in-app payments via OPay</li>
+        <li>Real-time driver location & delivery ETAs</li>
+      </ul>
+    </div>
+  </div>
+  <div class="quote" style="margin-top: 32px;">
+    The game-changer is the subscription engine. For the first time, a drycleaner in Oshodi knows her revenue before the month begins. She can hire help. She can breathe.
+  </div>
+</div>
+
+<!-- SLIDE 4: OPAY INTEGRATION -->
+<div class="slide">
+  <h2>Why OPay? Deep Fintech Integration</h2>
+  <p>
+    Stitch does not merely <em>use</em> OPay. We <span class="highlight">extend OPay's financial inclusion mission</span> into a sector it has never reached — moving entire enterprises from cash to digital, not just individuals.
+  </p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-number">100%</span>
+      <span class="stat-label">Customer payments flow through OPay</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">₦50M</span>
+      <span class="stat-label">Target monthly transaction volume by Month 12</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">30k+</span>
+      <span class="stat-label">Potential OPay merchant activations in Lagos alone</span>
+    </div>
+  </div>
+  <h3>Integration Points</h3>
+  <ul class="solution-list">
+    <li><strong>Embedded Checkout:</strong> Every subscription renewal, plan purchase, and delivery fee processed via OPay</li>
+    <li><strong>Agent Network Onboarding:</strong> OPay agents serve as human touchpoints to onboard non-tech-savvy business owners</li>
+    <li><strong>Business Wallets:</strong> Each SME gets a dedicated OPay sub-account for transparent revenue tracking</li>
+    <li><strong>Recurring Billing:</strong> OPay handles auto-renewal of customer volume plans, creating predictable digital transaction history</li>
+  </ul>
+</div>
+
+<!-- SLIDE 5: BUSINESS MODEL -->
+<div class="slide">
+  <h2>Business Model: Recurring Revenue from a Recurring Need</h2>
+  <p>Stitch monetizes the infrastructure that enables both sides. We are the rails, not the retailer.</p>
+  <table>
+    <tr>
+      <th>Revenue Stream</th>
+      <th>Mechanism</th>
+      <th>Projected Mix</th>
+    </tr>
+    <tr>
+      <td><strong>SaaS Subscriptions</strong></td>
+      <td>Monthly fees (₦5,000–₦15,000) scaled by order volume & branches</td>
+      <td>55%</td>
+    </tr>
+    <tr>
+      <td><strong>Transaction Commission</strong></td>
+      <td>1.5% on every customer payment processed via OPay</td>
+      <td>25%</td>
+    </tr>
+    <tr>
+      <td><strong>Subscription Facilitation</strong></td>
+      <td>Margin on volume plans sold to end-customers</td>
+      <td>12%</td>
+    </tr>
+    <tr>
+      <td><strong>Premium Add-ons</strong></td>
+      <td>Multi-location management, white-label apps, analytics APIs</td>
+      <td>8%</td>
+    </tr>
+  </table>
+  <div class="two-col" style="margin-top: 32px;">
+    <div class="col-box">
+      <h4>Unit Economics</h4>
+      <p style="font-size: 1rem; margin: 0;">
+        <strong>LTV:</strong> ₦147,000/year per business<br>
+        <strong>CAC:</strong> ₦12,000 (field onboarding)<br>
+        <strong>Gross Margin:</strong> 70% at scale<br>
+        <strong>Break-even:</strong> Month 14 at 500 active accounts
+      </p>
+    </div>
+    <div class="col-box">
+      <h4>The Flywheel</h4>
+      <p style="font-size: 1rem; margin: 0;">
+        More businesses → More customers → More transaction volume → Better data → Higher retention → More businesses joining organically.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: TRACTION -->
+<div class="slide">
+  <h2>Traction & Validation: Real Users, Real Revenue</h2>
+  <p>We did not build in a classroom. We built with drycleaners.</p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-number">8</span>
+      <span class="stat-label">Business owners piloted pre-launch order tracking</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">47</span>
+      <span class="stat-label">Customers bought subscription plans in 2 weeks</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">30%</span>
+      <span class="stat-label">Revenue recovery reported by early adopters</span>
+    </div>
+  </div>
+  <div class="quote">
+    "For the first time, I know how much money I will make this month before it starts. My customers stopped calling me. They just check their phone."
+    <span class="quote-author">— Drycleaner owner, Yaba</span>
+  </div>
+  <div class="quote">
+    "I no longer need to call to ask if my clothes are ready. I can see it on my phone. And I know exactly how many shirts I have left in my plan."
+    <span class="quote-author">— Customer, Lagos</span>
+  </div>
+</div>
+
+<!-- SLIDE 7: MARKET & SCALING -->
+<div class="slide">
+  <h2>Market Size & Scaling Strategy</h2>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-number">₦3.2T</span>
+      <span class="stat-label">Nigeria laundry & fashion market</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">50K+</span>
+      <span class="stat-label">Independent drycleaners & fashion studios in Lagos</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">65%</span>
+      <span class="stat-label">Smartphone penetration in urban working class</span>
+    </div>
+  </div>
+  <h3>Scaling Roadmap</h3>
+  <table>
+    <tr>
+      <th>Phase</th>
+      <th>Timeline</th>
+      <th>Target</th>
+    </tr>
+    <tr>
+      <td><strong>Pilot</strong></td>
+      <td>Months 1–3</td>
+      <td>50 Lagos businesses; OPay integration live</td>
+    </tr>
+    <tr>
+      <td><strong>Metro Expansion</strong></td>
+      <td>Months 4–12</td>
+      <td>500 businesses (Lagos/Abuja); 15,000 monthly orders</td>
+    </tr>
+    <tr>
+      <td><strong>National</strong></td>
+      <td>Year 2</td>
+      <td>2,500 businesses across 6 states; reseller/agent model</td>
+    </tr>
+    <tr>
+      <td><strong>Pan-African</strong></td>
+      <td>Year 3</td>
+      <td>Accra, Nairobi, Johannesburg — same problem, same platform</td>
+    </tr>
+  </table>
+</div>
+
+<!-- SLIDE 8: COMPETITION -->
+<div class="slide">
+  <h2>Competitive Landscape: A Wide-Open Blue Ocean</h2>
+  <p>There is no direct competition. Stitch is creating the category.</p>
+  <table>
+    <tr>
+      <th>Competitor Type</th>
+      <th>Examples</th>
+      <th>Why They Fail Here</th>
+    </tr>
+    <tr>
+      <td>Generic POS / ERP</td>
+      <td>Odoo, Sage</td>
+      <td>No per-garment tracking, no subscription units, no logistics</td>
+    </tr>
+    <tr>
+      <td>Horizontal Delivery Apps</td>
+      <td>Gokada, Chowdeck</td>
+      <td>Move items but do not manage production, pricing, or subscriptions</td>
+    </tr>
+    <tr>
+      <td>Informal WhatsApp</td>
+      <td>—</td>
+      <td>The status quo we are replacing. No records, no scale, no trust.</td>
+    </tr>
+  </table>
+  <div class="quote" style="margin-top: 32px;">
+    <strong>Our Moat:</strong> Vertical depth. We understand the difference between "dry-clean a silk gown" and "wash a cotton shirt." We map pricing to delivery zones. We manage production queues. By the time a horizontal player tries to build this context, we will have thousands of businesses locked in with their customer data and subscription revenue.
+  </div>
+</div>
+
+<!-- SLIDE 9: SOCIAL IMPACT -->
+<div class="slide">
+  <h2>Social Impact: From Informal to Formal</h2>
+  <p>Stitch is not just efficiency software. It is <span class="highlight">survival infrastructure</span> for the informal sector.</p>
+  <div class="two-col">
+    <div class="col-box">
+      <h4>👩 Women Empowerment</h4>
+      <p>70% of Nigerian fashion SMEs are female-owned. Stitch gives them business intelligence, customer records, and pricing power previously reserved for corporate chains.</p>
+    </div>
+    <div class="col-box">
+      <h4>💼 Youth Employment</h4>
+      <p>Every business digitized by Stitch hires 1–2 more staff (delivery, pressing, customer service) because predictable revenue enables expansion.</p>
+    </div>
+    <div class="col-box">
+      <h4>🏦 Financial Inclusion</h4>
+      <p>Informal businesses generate digital transaction histories for the first time, unlocking access to credit, tax compliance, and formal banking.</p>
+    </div>
+    <div class="col-box">
+      <h4>📱 Customer Dignity</h4>
+      <p>Working-class Nigerians deserve the same convenience as global consumers. Stitch gives them transparency, reliability, and doorstep service.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: FINANCIAL PROJECTIONS -->
+<div class="slide">
+  <h2>Financial Projections</h2>
+  <p>Conservative, Nigerian-reality-based numbers.</p>
+  <table>
+    <tr>
+      <th>Metric</th>
+      <th>Year 1</th>
+      <th>Year 2</th>
+      <th>Year 3</th>
+    </tr>
+    <tr>
+      <td>Active Business Accounts</td>
+      <td>500</td>
+      <td>2,500</td>
+      <td>8,000</td>
+    </tr>
+    <tr>
+      <td>Monthly Customer Orders</td>
+      <td>12,000</td>
+      <td>75,000</td>
+      <td>280,000</td>
+    </tr>
+    <tr>
+      <td>SaaS Revenue (Monthly)</td>
+      <td>₦7.5M</td>
+      <td>₦45M</td>
+      <td>₦160M</td>
+    </tr>
+    <tr>
+      <td>Transaction Revenue</td>
+      <td>₦2M</td>
+      <td>₦18M</td>
+      <td>₦75M</td>
+    </tr>
+    <tr>
+      <td>Gross Revenue (Annual)</td>
+      <td>₦114M</td>
+      <td>₦756M</td>
+      <td>₦2.82B</td>
+    </tr>
+    <tr>
+      <td>Gross Margin</td>
+      <td>65%</td>
+      <td>72%</td>
+      <td>78%</td>
+    </tr>
+  </table>
+  <p style="font-size: 1rem; color: var(--text-light); margin-top: 16px;">
+    Assumptions: ₦15,000 avg monthly SaaS fee; ₦5,000 avg order value; 1.8% transaction fee; 20% MoM growth in Year 1 post-launch.
+  </p>
+</div>
+
+<!-- SLIDE 11: THE TEAM -->
+<div class="slide">
+  <h2>The Team: Student Innovators, Real-World Problem Solvers</h2>
+  <p>We are undergraduate students combining technical skill with lived experience in the sectors we serve.</p>
+  <div class="two-col">
+    <div class="col-box">
+      <h4>💻 Technical</h4>
+      <p>Full-stack development (React, Node.js, PostgreSQL), mobile engineering, and API architecture. We built the prototype. We processed real payments.</p>
+    </div>
+    <div class="col-box">
+      <h4>🎨 Product & Design</h4>
+      <p>AI-assisted design workflow (Canva + Gemini) for rapid prototyping, UI iteration, and pitch assets. From concept to mockup in hours.</p>
+    </div>
+    <div class="col-box">
+      <h4>📊 Business & Strategy</h4>
+      <p>Market research, SME sales, pricing strategy, and financial modeling. We have sold to business owners, not just theorized about them.</p>
+    </div>
+    <div class="col-box">
+      <h4>🏠 Domain Expertise</h4>
+      <p>Team members with family businesses in fashion and laundry. We understand the pain because we lived it. We are local enough to know the nuances.</p>
+    </div>
+  </div>
+  <div class="quote" style="margin-top: 32px;">
+    We are young enough to move fast, local enough to understand Nigerian informal commerce, and technical enough to execute where others have only theorized.
+  </div>
+</div>
+
+<!-- SLIDE 12: USE OF FUNDS -->
+<div class="slide">
+  <h2>Use of Funds: The Investment Ask</h2>
+  <p><strong>Seeking:</strong> $350,000 (Seed Round) to reach 1,500 active businesses and ₦50M monthly recurring revenue.</p>
+  <table>
+    <tr>
+      <th>Allocation</th>
+      <th>%</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td><strong>Product & Engineering</strong></td>
+      <td>35%</td>
+      <td>Hire 2 senior backend engineers, 1 mobile developer, 1 QA; build white-label SDK and API infrastructure</td>
+    </tr>
+    <tr>
+      <td><strong>Sales & Marketing</strong></td>
+      <td>30%</td>
+      <td>Field sales team for Lagos/Abuja onboarding; digital marketing; customer education campaigns</td>
+    </tr>
+    <tr>
+      <td><strong>Operations & Deployment</strong></td>
+      <td>20%</td>
+      <td>Onboarding support, driver logistics partnerships, cloud scaling (AWS + Paystack enterprise)</td>
+    </tr>
+    <tr>
+      <td><strong>Customer Acquisition</strong></td>
+      <td>10%</td>
+      <td>Subsidized first month for first 100 businesses; referral incentives</td>
+    </tr>
+    <tr>
+      <td><strong>Legal & Compliance</strong></td>
+      <td>5%</td>
+      <td>Multi-state registration, NDPR compliance, trademark protection</td>
+    </tr>
+  </table>
+  <p style="margin-top: 24px;">
+    <strong>Milestone to Series A:</strong> 1,500 active business accounts, ₦50M MRR, presence in 4 Nigerian cities.
+  </p>
+</div>
+
+<!-- SLIDE 13: FUTURE ROADMAP -->
+<div class="slide">
+  <h2>Future Roadmap</h2>
+  <table>
+    <tr>
+      <th>Timeline</th>
+      <th>Feature / Initiative</th>
+      <th>Impact</th>
+    </tr>
+    <tr>
+      <td>Q2 2026</td>
+      <td>AI-powered demand forecasting</td>
+      <td>Business owners predict busy days and optimize staffing</td>
+    </tr>
+    <tr>
+      <td>Q3 2026</td>
+      <td>Embedded garment insurance</td>
+      <td>Customers insure high-value items during cleaning/alteration</td>
+    </tr>
+    <tr>
+      <td>Q4 2026</td>
+      <td>Stitch Business Banking (OPay-powered)</td>
+      <td>Dedicated wallets and sub-accounts for each SME owner</td>
+    </tr>
+    <tr>
+      <td>2027</td>
+      <td>Open API Marketplace</td>
+      <td>Third-party developers build apps for chemical suppliers, equipment leasers</td>
+    </tr>
+    <tr>
+      <td>2027+</td>
+      <td>Franchise Enablement</td>
+      <td>Successful businesses clone their model to new locations via Stitch</td>
+    </tr>
+  </table>
+</div>
+
+<!-- SLIDE 14: CLOSING -->
+<div class="slide title-slide" style="background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);">
+  <div class="badge" style="background: rgba(255,255,255,0.2);">OPay Innovation Challenge 2026</div>
+  <h1 style="font-size: 3.2rem;">Let's Stitch the Future Together</h1>
+  <p class="subtitle" style="max-width: 700px; margin: 0 auto 40px;">
+    We are not asking you to fund an app. We are asking you to empower student innovators who are building the digital backbone of Nigeria's most overlooked economy.
+  </p>
+  <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; max-width: 600px; margin: 0 auto;">
+    <p style="font-size: 1.1rem; margin-bottom: 16px; opacity: 0.95;">
+      <strong>Category:</strong> Digital Tools for SMEs & Informal Sector<br>
+      <strong>+ Fintech Integration</strong>
+    </p>
+    <p style="opacity: 0.8; font-size: 0.95rem;">
+      Within 12 months, Stitch will process ₦50 million in monthly transaction volume across 500 Nigerian SMEs — all tracked, taxed, and formalized through digital payments.
+    </p>
+  </div>
+  <div class="meta" style="margin-top: 50px;">
+    <span>Stitch Team</span>
+    <span>OPay Innovation Challenge 2026</span>
+    <span>Nigeria First, Africa Next</span>
+  </div>
+</div>
+
+</body>
+</html>
