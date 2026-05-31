@@ -123,7 +123,7 @@ export default function AdminPlans() {
           <div key={plan.id} className="col-md-4">
             <div className={`bg-white rounded-3 border p-4 h-100 d-flex flex-column ${plan.popular?'border-primary border-2':''}`}>
               {plan.popular && <span className="badge bg-primary mb-2" style={{width:'fit-content'}}>Most Popular</span>}
-              <h5 className="fw-bold mb-1" style={{fontFamily:'var(--font-display)'}}>{plan.name}</h5>
+              <h5 className="fw-bold mb-1" style={{fontFamily:'var(--font-heading)'}}>{plan.name}</h5>
               <div className="fw-bold text-primary fs-3 mb-0">{formatNGN(Number(plan.amount))}</div>
               <div className="text-muted small mb-2">/month</div>
               <div className="d-flex align-items-center gap-2 mb-2">

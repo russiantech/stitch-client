@@ -20,7 +20,7 @@ export default function ImpersonationBanner() {
     <div
       style={{
         position: 'sticky', top: 0, zIndex: 200,
-        background: 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
+        background: 'linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%)',
         color: '#fff',
       }}
     >

@@ -174,7 +174,7 @@ export default function CreateOrder() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const ref = `SL-ORD-${Date.now()}`;
+      const ref = `ST-ORD-${Date.now()}`;
       const payload = {
         behalf_user_id:       actingOnBehalf ? behalfId : null,
         services:             form.services,
@@ -194,7 +194,7 @@ export default function CreateOrder() {
 
       if (form.payment_method === 'direct' && totalAmount > 0) {
         const result = await paystackPay({
-          email:    user?.email || 'customer@simplylovely.ng',
+          email:    user?.email || 'customer@stitch.ng',
           amount:   totalAmount,
           ref,
           metadata: { order_type: 'laundry', behalf_user_id: behalfId || null },
@@ -276,7 +276,7 @@ export default function CreateOrder() {
     <div>
       <h6 className="fw-semibold mb-1">Select Garments</h6>
       <p className="text-muted small mb-4">
-        Add the types and quantities you want cleaned. Prices are set by SimplyLovely and adjusted by your selected service.
+        Add the types and quantities you want cleaned. Prices are set by Stitch and adjusted by your selected service.
       </p>
       <div className="row g-3">
         {garmentPricing.filter(g => g.active !== false).map(garment => {

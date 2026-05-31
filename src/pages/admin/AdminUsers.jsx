@@ -6,11 +6,11 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 
 const MOCK_USERS = [
-  { id:1, name:'Adaeze Okonkwo',  email:'adaeze@simplylovely.ng',  phone:'08011111111', role:'admin',    status:'Active',   plan:'Enterprise',   joined:'2024-11-01' },
+  { id:1, name:'Adaeze Okonkwo',  email:'adaeze@stitch.ng',  phone:'08011111111', role:'admin',    status:'Active',   plan:'Enterprise',   joined:'2024-11-01' },
   { id:2, name:'Chiamaka Eze',    email:'chiamaka@gmail.com',       phone:'08012345678', role:'customer', status:'Active',   plan:'Premium Clean', joined:'2025-01-15' },
   { id:3, name:'Emeka Nwosu',     email:'emeka@gmail.com',          phone:'08023456789', role:'customer', status:'Active',   plan:'Basic Wash',   joined:'2025-02-10' },
-  { id:4, name:'Segun Adeola',    email:'segun@simplylovely.ng',    phone:'08101234567', role:'driver',   status:'Active',   plan:'—',            joined:'2025-01-05' },
-  { id:5, name:'Chioma Uzoma',    email:'chioma@simplylovely.ng',   phone:'08211111111', role:'staff',    status:'Active',   plan:'—',            joined:'2024-12-20' },
+  { id:4, name:'Segun Adeola',    email:'segun@stitch.ng',    phone:'08101234567', role:'driver',   status:'Active',   plan:'—',            joined:'2025-01-05' },
+  { id:5, name:'Chioma Uzoma',    email:'chioma@stitch.ng',   phone:'08211111111', role:'staff',    status:'Active',   plan:'—',            joined:'2024-12-20' },
   { id:6, name:'Aisha Bello',     email:'aisha@gmail.com',          phone:'08067890123', role:'customer', status:'Inactive', plan:'Basic Wash',   joined:'2025-03-01' },
 ];
 

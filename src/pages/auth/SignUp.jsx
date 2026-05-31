@@ -39,14 +39,14 @@ export default function SignUp() {
     <div className="auth-wrapper">
       <div className="auth-card" style={{ maxWidth: 460 }}>
         <div className="text-center mb-4">
-          <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-display)' }}>
-            <i className="fas fa-heart-pulse text-danger me-2" />SimplyLovely
+          <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+            <span className="brand-scissors me-2"><i className="fas fa-scissors"/></span>Stitch
           </div>
           <p className="text-muted small mb-0">Laundry & Fashion Operations</p>
         </div>
 
         <h5 className="fw-semibold mb-1">Create an account</h5>
-        <p className="text-muted small mb-4">Join SimplyLovely today</p>
+        <p className="text-muted small mb-4">Join Stitch today</p>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

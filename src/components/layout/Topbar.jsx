@@ -130,7 +130,7 @@ export default function Topbar({ onMenuClick }) {
   const notifsRef = useRef();
   const profileRef = useRef();
 
-  const title = PAGE_TITLES[location.pathname] || 'SimplyLovely';
+  const title = PAGE_TITLES[location.pathname] || 'Stitch';
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -154,7 +154,7 @@ export default function Topbar({ onMenuClick }) {
       </button>
 
       <div className="me-auto">
-        <h6 className="mb-0 fw-semibold" style={{fontFamily:'var(--font-display)'}}>{title}</h6>
+        <h6 className="mb-0 fw-semibold" style={{fontFamily:'var(--font-heading)'}}>{title}</h6>
       </div>
 
       <div className="d-flex align-items-center gap-2">

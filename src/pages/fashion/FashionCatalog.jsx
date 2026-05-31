@@ -306,7 +306,7 @@ function ViewProductModal({ product, onClose, onEdit }) {
                             key={i}
                             src={img.url}
                             alt=""
-                            style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', border: i === imgIdx ? '2px solid var(--sl-primary)' : '2px solid transparent' }}
+                            style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', border: i === imgIdx ? '2px solid var(--primary)' : '2px solid transparent' }}
                             onClick={() => setImgIdx(i)}
                           />
                         ))}

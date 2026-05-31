@@ -79,8 +79,8 @@ export default function Sidebar({ show, onClose }) {
       <aside className={`sl-sidebar${show ? ' show' : ''}`}>
         {/* Brand */}
         <a href="/dashboard" className="sidebar-brand">
-          <i className="fas fa-heart-pulse text-danger" />
-          SimplyLovely
+          <span className="brand-scissors"><i className="fas fa-scissors" /></span>
+          Stitch
         </a>
 
         {/* User info */}

@@ -58,7 +58,7 @@ function PrivateRoute({ children }) {
       <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
         <div className="text-center">
           <div className="spinner-border text-primary mb-3" role="status" />
-          <div className="text-muted small">Loading SimplyLovely…</div>
+          <div className="text-muted small">Loading Stitch…</div>
         </div>
       </div>
     );

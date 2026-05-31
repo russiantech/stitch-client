@@ -7,100 +7,153 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useAppData } from '../../context/AppDataContext.jsx';
 
-// ─── Mock data for demo ────────────────────────────────────────────────────────
+// ─── Mock usage log with rich source info ─────────────────────────────────────
 const MOCK_MY_LOG = [
-  { id:1, order_id:'LD-001', description:'Standard Wash — 12 garments', units_deducted:12, plan_name:'Premium Clean', balance_before:150, balance_after:138, date:'2025-05-24T10:30:00Z', staff:'Chioma U.' },
-  { id:2, order_id:'LD-003', description:'Dry Cleaning — 8 garments',   units_deducted:8,  plan_name:'Premium Clean', balance_before:138, balance_after:130, date:'2025-05-23T14:20:00Z', staff:'Musa A.' },
-  { id:3, order_id:'LD-004', description:'Standard Wash — 20 garments', units_deducted:20, plan_name:'Multiple Plans', balance_before:180, balance_after:160, date:'2025-05-22T09:10:00Z', staff:'Chioma U.', merged:true, breakdown:[{plan:'Basic Wash',units:10},{plan:'Premium Clean',units:10}] },
-  { id:4, order_id:'LD-005', description:'Ironing Only — 3 garments',   units_deducted:3,  plan_name:'Basic Wash',    balance_before:50,  balance_after:47,  date:'2025-05-21T11:00:00Z', staff:'Musa A.' },
+  {
+    id:1, order_id:'LD-001', description:'Standard Wash — 12 garments',
+    units_deducted:12, plan_name:'Premium Clean', plan_id:2,
+    balance_before:150, balance_after:138,
+    date:'2025-05-24T10:30:00Z', staff:'Chioma U.',
+    source_type:'subscription', payment_status:'deducted',
+  },
+  {
+    id:2, order_id:'LD-003', description:'Dry Cleaning — 8 garments',
+    units_deducted:8, plan_name:'Premium Clean', plan_id:2,
+    balance_before:138, balance_after:130,
+    date:'2025-05-23T14:20:00Z', staff:'Musa A.',
+    source_type:'subscription', payment_status:'deducted',
+  },
+  {
+    id:3, order_id:'LD-004', description:'Standard Wash — 20 garments',
+    units_deducted:20, plan_name:'Multiple Plans', plan_id:null,
+    balance_before:180, balance_after:160,
+    date:'2025-05-22T09:10:00Z', staff:'Chioma U.',
+    source_type:'subscription', payment_status:'deducted',
+    merged:true,
+    breakdown:[
+      { plan_name:'Basic Wash', plan_id:1, units:10 },
+      { plan_name:'Premium Clean', plan_id:2, units:10 },
+    ],
+  },
+  {
+    id:4, order_id:'LD-005', description:'Ironing Only — 3 garments',
+    units_deducted:3, plan_name:'Basic Wash', plan_id:1,
+    balance_before:50, balance_after:47,
+    date:'2025-05-21T11:00:00Z', staff:'Musa A.',
+    source_type:'subscription', payment_status:'deducted',
+  },
+  {
+    id:5, order_id:'LD-006', description:'Express Wash — 5 garments (direct payment)',
+    units_deducted:0, plan_name:null, plan_id:null,
+    balance_before:47, balance_after:47,
+    date:'2025-05-20T08:00:00Z', staff:'Chioma U.',
+    source_type:'direct', payment_status:'paid', payment_amount:4000,
+  },
 ];
 
-// ─── Paystack flow ─────────────────────────────────────────────────────────────
-// Full flow:
-//   1. Try backend initiate → gets authorization_url (Paystack hosted page, supports recurring plan_code)
-//   2. If backend returns redirect URL → redirect customer there (Paystack handles recurring setup)
-//   3. On return, URL has ?reference= → we verify with backend
-//   4. If backend unreachable → fall back to PaystackPop inline (one-time charge, no plan_code)
-//   5. Demo mode (no Paystack loaded) → simulate after 1.2s
+// ─── Paystack: inline popup first, backend redirect fallback ──────────────────
+async function initiateSubscription({ plan, email, isRenew, onSuccess, onClose, toast }) {
+  const actionLabel = isRenew ? 'top-up' : 'subscription';
 
-async function initiateSubscription({ plan, email, onSuccess, onClose, toast }) {
-  // ── Step 1: Try backend-generated authorization URL (proper recurring) ──────
+  // 1. Try backend initiate (returns authorization_url for hosted Paystack page + plan_code recurring)
   try {
     const res = await subscriptionService.initiate(plan.id, email);
     if (res?.authorization_url) {
-      // Paystack will handle recurring billing via plan_code
-      // Store pending plan info for when customer returns
-      sessionStorage.setItem('pending_sub', JSON.stringify({ plan_id: plan.id, plan_name: plan.name }));
+      sessionStorage.setItem('pending_sub', JSON.stringify({
+        plan_id: plan.id, plan_name: plan.name, is_renew: isRenew,
+      }));
+      toast.info(`Redirecting to payment for ${actionLabel}…`);
       window.location.href = res.authorization_url;
-      return; // page navigates away
+      return;
     }
-    // Backend returned success without redirect (e.g. already subscribed via token)
-    if (res?.success) { onSuccess(res.reference || `BE-${Date.now()}`, plan); return; }
+    if (res?.success) {
+      onSuccess?.(res.reference || `BE-${Date.now()}`, plan, isRenew);
+      return;
+    }
   } catch (err) {
-    // Backend unavailable — fall through to inline
     console.warn('Backend initiate failed, trying inline:', err.message);
   }
 
-  // ── Step 2: PaystackPop inline (no plan_code, one-time charge) ──────────────
+  // 2. Paystack inline popup (v2 API)
   if (window.PaystackPop) {
-    const ref = `SL-SUB-${plan.id}-${Date.now()}`;
-    return new Promise((resolve) => {
+    const ref = `ST-SUB-${plan.id}-${Date.now()}`;
+    await new Promise((resolve) => {
       const handler = window.PaystackPop.setup({
         key: PAYSTACK_KEY,
         email,
-        amount: plan.amount * 100, // kobo
+        amount: plan.amount * 100,
         currency: 'NGN',
         ref,
-        // plan: plan.paystack_plan_code  ← backend should inject this if available
-        metadata: { plan_id: plan.id, plan_name: plan.name, type: 'subscription' },
+        // plan: plan.paystack_plan_code  // backend provides if available
+        metadata: {
+          plan_id: plan.id,
+          plan_name: plan.name,
+          type: 'subscription',
+          is_renew: isRenew,
+          action: isRenew ? 'top_up_reset' : 'new_subscription',
+        },
+        channels: ['card', 'bank', 'ussd', 'bank_transfer'],
         callback: async (response) => {
           toast.info('Verifying payment…');
           try {
-            // Verify with backend
             const verified = await subscriptionService.verify(response.reference);
             toast.success(verified?.message || 'Payment verified!');
-            onSuccess(response.reference, plan);
           } catch {
-            // If verify endpoint fails, still credit locally (demo/dev)
-            onSuccess(response.reference, plan);
+            // Verification timeout — webhook will reconcile server-side
+            toast.success('Payment received — subscription updating in background.');
           }
+          onSuccess?.(response.reference, plan, isRenew);
           resolve();
         },
-        onClose: () => { onClose && onClose(); resolve(); },
+        onClose: () => {
+          onClose?.();
+          resolve();
+        },
       });
       handler.openIframe();
     });
+    return;
   }
 
-  // ── Step 3: Demo fallback ──────────────────────────────────────────────────
-  toast.info('Processing payment (demo mode)…');
+  // 3. Demo fallback
+  toast.info(`Processing ${actionLabel} (demo)…`);
   await new Promise(r => setTimeout(r, 1400));
-  onSuccess(`DEMO-${Date.now()}`, plan);
+  toast.success(`${isRenew ? 'Top-up' : 'Subscription'} activated (demo)!`);
+  onSuccess?.(`DEMO-${Date.now()}`, plan, isRenew);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtDateTime(iso) {
+  return new Date(iso).toLocaleString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // ─── Sub status badge ─────────────────────────────────────────────────────────
 function SubStatusBadge({ status }) {
-  const map = {
-    active:    { cls: 'bg-success', label: 'Active' },
-    paused:    { cls: 'bg-warning text-dark', label: 'Paused' },
-    cancelled: { cls: 'bg-danger', label: 'Cancelled' },
-    pending:   { cls: 'bg-secondary', label: 'Pending' },
-    expired:   { cls: 'bg-secondary', label: 'Expired' },
+  const MAP = {
+    active:    { cls:'bg-success', label:'Active' },
+    paused:    { cls:'bg-warning text-dark', label:'Paused' },
+    cancelled: { cls:'bg-danger', label:'Cancelled' },
+    expired:   { cls:'bg-secondary', label:'Expired' },
+    pending:   { cls:'bg-secondary', label:'Pending' },
   };
-  const { cls, label } = map[status] || map.pending;
+  const { cls, label } = MAP[status] || MAP.pending;
   return <span className={`badge ${cls}`} style={{ fontSize: 10 }}>{label}</span>;
 }
 
-// ─── Manage dropdown for a subscription ───────────────────────────────────────
+// ─── Manage dropdown ──────────────────────────────────────────────────────────
 function ManageDropdown({ sub, onAction }) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
   useEffect(() => {
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
   const act = (action) => { setOpen(false); onAction(sub, action); };
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button className="btn btn-sm btn-outline-secondary" onClick={() => setOpen(p => !p)}>
@@ -108,7 +161,7 @@ function ManageDropdown({ sub, onAction }) {
       </button>
       {open && (
         <div className="bg-white border rounded-2 shadow-sm py-1"
-          style={{ position:'absolute', right:0, top:'calc(100% + 4px)', width:180, zIndex:100 }}>
+          style={{ position:'absolute', right:0, top:'calc(100% + 4px)', width:190, zIndex:100 }}>
           {sub.status === 'active' && (
             <button className="btn btn-link w-100 text-start px-3 py-2 text-decoration-none text-warning-emphasis small"
               onClick={() => act('pause')}>
@@ -145,20 +198,20 @@ function ConfirmModal({ action, sub, onConfirm, onClose }) {
   const MAP = {
     cancel: {
       title: 'Cancel Subscription',
-      body: `Are you sure you want to cancel your "${sub?.plan_name}" subscription? Your remaining units will still be usable until the end of the current billing period.`,
+      body: `Cancel your "${sub?.plan_name}" subscription? Remaining units stay usable until the billing period ends. No further charges.`,
       btnClass: 'btn-danger', btnLabel: 'Yes, Cancel',
     },
     pause: {
       title: 'Pause Subscription',
-      body: `Your "${sub?.plan_name}" subscription will be paused. No new charges will be made and your units will remain available. You can resume anytime.`,
-      btnClass: 'btn-warning', btnLabel: 'Pause Subscription',
+      body: `Pause "${sub?.plan_name}"? No new charges will be made. Your units remain usable. Resume anytime.`,
+      btnClass: 'btn-warning', btnLabel: 'Pause It',
     },
   };
   const info = MAP[action];
   if (!info) return null;
   return (
     <div className="modal show d-block" style={{ background:'rgba(0,0,0,0.45)' }}>
-      <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth:400 }}>
         <div className="modal-content">
           <div className="modal-header border-0 pb-0">
             <h6 className="modal-title fw-semibold">{info.title}</h6>
@@ -177,93 +230,171 @@ function ConfirmModal({ action, sub, onConfirm, onClose }) {
   );
 }
 
-// ─── Plan card ────────────────────────────────────────────────────────────────
-function PlanCard({ plan, activePlanIds, onSubscribe, loading }) {
-  const isActive = activePlanIds.includes(plan.id);
+// ─── Plan Card ────────────────────────────────────────────────────────────────
+// Rules:
+//   - Already active with this plan → show "Top Up / Renew" (accent orange)
+//   - Different plan, not subscribed → show "Subscribe" (primary purple)
+//   - Multiple unique plans allowed in parallel
+function PlanCard({ plan, existingSub, onSubscribe, onRenew, loading }) {
+  const isLoading   = loading === plan.id;
+  const hasThisSub  = !!existingSub && existingSub.status === 'active';
+  const isPaused    = !!existingSub && existingSub.status === 'paused';
+  const pct         = hasThisSub
+    ? Math.min(100, Math.round((existingSub.units_used / existingSub.units) * 100))
+    : 0;
+
   return (
-    <div className={`bg-white rounded-3 border p-4 h-100 d-flex flex-column ${plan.popular ? 'border-primary border-2' : ''}`}>
-      {plan.popular && <span className="badge bg-primary mb-2" style={{ width:'fit-content' }}>Most Popular</span>}
-      <h5 className="fw-bold mb-1" style={{ fontFamily:'var(--font-display)' }}>{plan.name}</h5>
-      <div className="fw-bold text-primary fs-3 mb-0">{formatNGN(plan.amount)}</div>
-      <div className="text-muted small mb-3">/month · {plan.units} units</div>
-      <p className="text-muted small flex-1 mb-3">{plan.description}</p>
-      <ul className="list-unstyled small mb-4">
-        {[`${plan.units} laundry units / month`,'Use across any service','Merge with other plans','Recurring auto-renewal',].map(f=>(
-          <li key={f} className="mb-1"><i className="fas fa-check text-success me-2" />{f}</li>
+    <div className={`bg-white rounded-3 border p-4 h-100 d-flex flex-column ${plan.popular ? 'sub-active-ring' : ''} ${hasThisSub ? '' : ''}`}
+      style={{ position: 'relative' }}>
+      {plan.popular && (
+        <span className="badge mb-2" style={{ background:'var(--primary)', fontSize:10, width:'fit-content' }}>Most Popular</span>
+      )}
+      {hasThisSub && (
+        <span className="badge mb-2" style={{ background:'var(--success)', fontSize:10, width:'fit-content' }}>
+          <i className="fas fa-check-circle me-1" />Active
+        </span>
+      )}
+      {isPaused && (
+        <span className="badge mb-2 bg-warning text-dark" style={{ fontSize:10, width:'fit-content' }}>
+          <i className="fas fa-pause-circle me-1" />Paused
+        </span>
+      )}
+
+      <h5 className="fw-bold mb-1" style={{ fontFamily:'var(--font-heading)' }}>{plan.name}</h5>
+      <div className="fw-bold fs-3 mb-0" style={{ color:'var(--primary)' }}>{formatNGN(plan.amount)}</div>
+      <div className="text-muted small mb-2">/month · {plan.units} units</div>
+      {plan.description && <p className="text-muted small flex-1 mb-3">{plan.description}</p>}
+
+      <ul className="list-unstyled small mb-3">
+        {[
+          `${plan.units} laundry units per billing period`,
+          'Use across any service type',
+          'Merge units with other plans',
+          'Auto-renews · cancel anytime',
+        ].map(f => (
+          <li key={f} className="mb-1">
+            <i className="fas fa-check me-2" style={{ color:'var(--success)' }} />{f}
+          </li>
         ))}
       </ul>
-      <button
-        className={`btn w-100 ${isActive ? 'btn-outline-success' : 'btn-primary'}`}
-        onClick={() => onSubscribe(plan)}
-        disabled={loading === plan.id}
-      >
-        {loading === plan.id
-          ? <><span className="spinner-border spinner-border-sm me-2"/>Processing…</>
-          : isActive
-            ? <><i className="fas fa-plus me-2"/>Add More Units</>
-            : <><i className="fas fa-credit-card me-2"/>Subscribe — {formatNGN(plan.amount)}/mo</>
-        }
-      </button>
-      {isActive && (
-        <div className="text-center mt-2 small text-success">
-          <i className="fas fa-check-circle me-1"/>Active subscription
+
+      {/* Progress bar if active */}
+      {hasThisSub && (
+        <div className="mb-3">
+          <div className="d-flex justify-content-between small mb-1">
+            <span className="text-muted">Units used</span>
+            <span style={{ color: pct>80 ? 'var(--danger)' : 'var(--text-muted)' }}>{pct}%</span>
+          </div>
+          <div className="progress" style={{ height:6, borderRadius:4 }}>
+            <div
+              className="progress-bar"
+              style={{
+                width:`${pct}%`, borderRadius:4, transition:'width 0.6s',
+                backgroundColor: pct>80 ? 'var(--danger)' : pct>60 ? 'var(--warning)' : 'var(--primary)',
+              }}
+            />
+          </div>
+          <div className="d-flex justify-content-between small mt-1">
+            <span className="text-muted">{existingSub.units_used} used</span>
+            <span style={{ color:'var(--success)', fontWeight:600 }}>{existingSub.units_remaining} remaining</span>
+          </div>
         </div>
+      )}
+
+      {/* CTA */}
+      {hasThisSub ? (
+        <div className="d-flex flex-column gap-2">
+          <button
+            className="btn w-100 btn-accent"
+            onClick={() => onRenew(plan)}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? <><span className="spinner-border spinner-border-sm me-2" />Processing…</>
+              : <><i className="fas fa-rotate me-2" />Top Up / Renew — {formatNGN(plan.amount)}</>
+            }
+          </button>
+          <div className="text-center small text-muted" style={{ fontSize:11 }}>
+            Adds {plan.units} units · resets billing period from today
+          </div>
+        </div>
+      ) : isPaused ? (
+        <button className="btn btn-outline-secondary w-100" disabled>
+          <i className="fas fa-pause me-2" />Paused
+        </button>
+      ) : (
+        <button
+          className="btn w-100"
+          style={{ background:'var(--primary)', color:'#fff' }}
+          onClick={() => onSubscribe(plan)}
+          disabled={isLoading}
+        >
+          {isLoading
+            ? <><span className="spinner-border spinner-border-sm me-2" />Processing…</>
+            : <><i className="fas fa-credit-card me-2" />Subscribe — {formatNGN(plan.amount)}/mo</>
+          }
+        </button>
       )}
     </div>
   );
 }
 
-// ─── Active subscription card ─────────────────────────────────────────────────
+// ─── Subscription card (My Plans tab) ────────────────────────────────────────
 function SubscriptionCard({ sub, onAction }) {
-  const pct = sub.units > 0 ? Math.min(100, Math.round((sub.units_used / sub.units) * 100)) : 0;
-  const bar = pct > 80 ? 'bg-danger' : pct > 60 ? 'bg-warning' : 'bg-success';
+  const pct = sub.units > 0 ? Math.min(100,Math.round((sub.units_used/sub.units)*100)) : 0;
+  const barColor = pct>80 ? 'var(--danger)' : pct>60 ? 'var(--warning)' : 'var(--primary)';
   return (
     <div className="bg-white rounded-3 border p-4 mb-3">
       <div className="d-flex align-items-start justify-content-between gap-2 mb-3">
         <div>
-          <div className="fw-semibold">{sub.plan_name}</div>
+          <div className="fw-semibold" style={{ fontFamily:'var(--font-heading)' }}>{sub.plan_name}</div>
           <div className="text-muted small">
-            Since {new Date(sub.subscribed_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}
-            {sub.renews_at && ` · Renews ${new Date(sub.renews_at).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}`}
+            Started {fmtDate(sub.subscribed_at)}
+            {sub.renews_at && <> · Renews {fmtDate(sub.renews_at)}</>}
           </div>
+          {sub.interval && (
+            <div style={{ fontSize:11, color:'var(--accent)', fontWeight:600 }}>
+              <i className="fas fa-rotate me-1" />{sub.interval} billing
+            </div>
+          )}
         </div>
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-2 flex-shrink-0">
           <SubStatusBadge status={sub.status} />
-          {sub.status !== 'cancelled' && sub.status !== 'expired' && (
+          {!['cancelled','expired'].includes(sub.status) && (
             <ManageDropdown sub={sub} onAction={onAction} />
           )}
         </div>
       </div>
 
-      <div className="row g-2 mb-3 text-center">
+      <div className="row g-2 text-center mb-3">
         {[
-          { label:'Total Units', value:sub.units,           color:'text-dark' },
-          { label:'Used',        value:sub.units_used,      color:'text-danger' },
-          { label:'Remaining',   value:sub.units_remaining, color:'text-success' },
-        ].map(s=>(
+          { label:'Plan Units', value:sub.units, color:'var(--text)' },
+          { label:'Used',       value:sub.units_used, color:'var(--danger)' },
+          { label:'Remaining',  value:sub.units_remaining, color:'var(--success)' },
+        ].map(s => (
           <div key={s.label} className="col-4">
-            <div className={`fw-bold fs-5 ${s.color}`}>{s.value}</div>
-            <div className="text-muted" style={{fontSize:11}}>{s.label}</div>
+            <div className="fw-bold fs-5" style={{ color:s.color }}>{s.value}</div>
+            <div className="text-muted" style={{ fontSize:11 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       <div>
         <div className="d-flex justify-content-between small mb-1">
-          <span className="text-muted">Unit usage</span>
-          <span className={pct>80?'text-danger fw-medium':'text-muted'}>{pct}%</span>
+          <span className="text-muted">Usage progress</span>
+          <span style={{ color: pct>80 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: pct>80?600:400 }}>{pct}%</span>
         </div>
-        <div className="progress" style={{height:8,borderRadius:6}}>
-          <div className={`progress-bar ${bar}`} style={{width:`${pct}%`,borderRadius:6,transition:'width 0.6s'}}/>
+        <div className="progress" style={{ height:8, borderRadius:6 }}>
+          <div className="progress-bar" style={{ width:`${pct}%`, borderRadius:6, backgroundColor:barColor, transition:'width 0.6s' }} />
         </div>
-        {sub.units_remaining <= 20 && sub.status === 'active' && (
-          <div className="text-danger small mt-1">
-            <i className="fas fa-exclamation-triangle me-1"/>Low units — consider adding another plan
+        {sub.units_remaining <= 20 && sub.status==='active' && (
+          <div className="small mt-1" style={{ color:'var(--danger)' }}>
+            <i className="fas fa-exclamation-triangle me-1" />Low units — consider topping up!
           </div>
         )}
-        {sub.status === 'paused' && (
-          <div className="text-warning small mt-1">
-            <i className="fas fa-pause-circle me-1"/>Paused — no new charges. Units still usable.
+        {sub.status==='paused' && (
+          <div className="small mt-1 text-muted">
+            <i className="fas fa-pause-circle me-1" />Paused — no charges. Units still usable.
           </div>
         )}
       </div>
@@ -271,73 +402,111 @@ function SubscriptionCard({ sub, onAction }) {
   );
 }
 
-// ─── Usage log ────────────────────────────────────────────────────────────────
-function UsageLog({ log, loading }) {
-  if (loading) return <LoadingSpinner message="Loading usage history…"/>;
-  if (log.length === 0) return (
-    <EmptyState
-      icon="fa-chart-bar"
-      title="No usage records yet"
-      message="Your unit consumption history appears here once orders start being processed."
-    />
+// ─── Usage Log ────────────────────────────────────────────────────────────────
+function UsageLogTab({ log, loading }) {
+  if (loading) return <LoadingSpinner message="Loading usage history…" />;
+  if (log.length===0) return (
+    <EmptyState icon="fa-chart-bar" title="No usage records yet"
+      message="Your unit deductions appear here after Stitch staff process your garments." />
   );
 
-  const totalDeducted = log.reduce((s,l) => s + (l.units_deducted||0), 0);
+  const totalDed   = log.reduce((s,l) => s+(l.units_deducted||0), 0);
+  const subOrders  = log.filter(l => l.source_type==='subscription');
+  const directOrders = log.filter(l => l.source_type==='direct');
 
   return (
     <div>
-      {/* Summary */}
+      {/* Summary cards */}
       <div className="row g-3 mb-4">
         {[
-          { label:'Total Records', value:log.length,                                          color:'text-primary' },
-          { label:'Units Consumed', value:totalDeducted,                                      color:'text-danger' },
-          { label:'Orders Covered', value:log.filter(l=>l.order_id).length,                  color:'text-success' },
-          { label:'Merged Deductions', value:log.filter(l=>l.merged).length,                 color:'text-warning' },
-        ].map(s=>(
+          { label:'Total Entries',       value:log.length,             color:'var(--primary)' },
+          { label:'Units Deducted',      value:totalDed,               color:'var(--danger)' },
+          { label:'Via Subscription',    value:subOrders.length,       color:'var(--success)' },
+          { label:'Direct Payments',     value:directOrders.length,    color:'var(--accent)' },
+        ].map(s => (
           <div key={s.label} className="col-6 col-sm-3">
             <div className="bg-white rounded-3 border p-3 text-center">
-              <div className={`fw-bold fs-4 ${s.color}`}>{s.value}</div>
+              <div className="fw-bold fs-4" style={{ color:s.color }}>{s.value}</div>
               <div className="text-muted small">{s.label}</div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Legend */}
+      <div className="d-flex gap-3 mb-3 flex-wrap">
+        <div className="d-flex align-items-center gap-2 small text-muted">
+          <span className="rounded-circle" style={{ width:10,height:10,background:'var(--primary)',flexShrink:0 }} />Deducted from subscription
+        </div>
+        <div className="d-flex align-items-center gap-2 small text-muted">
+          <span className="rounded-circle" style={{ width:10,height:10,background:'var(--accent)',flexShrink:0 }} />Direct / cash payment
+        </div>
+        <div className="d-flex align-items-center gap-2 small text-muted">
+          <span className="rounded-circle" style={{ width:10,height:10,background:'var(--warning)',flexShrink:0 }} />Merged from multiple plans
+        </div>
+      </div>
+
       {/* Mobile cards */}
       <div className="d-flex flex-column gap-3 d-md-none">
-        {log.map((entry,idx) => (
+        {log.map((entry) => (
           <div key={entry.id} className="bg-white rounded-3 border p-3">
+            {/* Header row */}
             <div className="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <div className="fw-medium small">{entry.order_id || '—'}</div>
-                <div className="text-muted" style={{fontSize:11}}>
-                  {new Date(entry.date).toLocaleString('en-NG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
-                </div>
+                <div className="text-muted" style={{ fontSize:11 }}>{fmtDateTime(entry.date)}</div>
               </div>
-              <span className="badge bg-danger bg-opacity-15 text-danger fw-bold" style={{fontSize:13}}>
-                −{entry.units_deducted}
-              </span>
+              <div>
+                {entry.source_type === 'subscription' ? (
+                  <span className="badge" style={{ background:'var(--primary-light)',color:'var(--primary)',fontSize:11 }}>
+                    −{entry.units_deducted}u
+                  </span>
+                ) : (
+                  <span className="badge" style={{ background:'var(--accent-light)',color:'var(--accent-dark)',fontSize:11 }}>
+                    {formatNGN(entry.payment_amount||0)}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Description */}
             <div className="small text-muted mb-2">{entry.description}</div>
-            {entry.merged && entry.breakdown && (
-              <div className="bg-warning bg-opacity-10 rounded-2 p-2 mb-2">
-                <div className="small fw-medium mb-1"><i className="fas fa-code-merge me-1 text-warning"/>Merged from:</div>
-                {entry.breakdown.map((b,i)=>(
-                  <div key={i} className="d-flex justify-content-between small">
-                    <span className="text-muted">{b.plan}</span>
-                    <span className="fw-medium">{b.units} units</span>
-                  </div>
-                ))}
+
+            {/* Source / plan info */}
+            <div className="bg-light rounded-2 p-2 mb-2">
+              <div className="small fw-medium mb-1">
+                {entry.source_type==='subscription' ? (
+                  <><i className="fas fa-layer-group me-1" style={{ color:'var(--primary)' }} />Charged from: </>
+                ) : (
+                  <><i className="fas fa-credit-card me-1" style={{ color:'var(--accent)' }} />Paid directly</>
+                )}
+              </div>
+              {entry.source_type==='subscription' && entry.merged && entry.breakdown ? (
+                <div className="d-flex flex-wrap gap-1">
+                  {entry.breakdown.map((b,i) => (
+                    <span key={i} className="badge" style={{ background:'var(--primary-light)',color:'var(--primary)',fontSize:10 }}>
+                      <i className="fas fa-code-merge me-1" />{b.plan_name}: {b.units}u
+                    </span>
+                  ))}
+                </div>
+              ) : entry.source_type==='subscription' ? (
+                <span className="badge" style={{ background:'var(--primary-light)',color:'var(--primary)',fontSize:10 }}>
+                  {entry.plan_name}
+                </span>
+              ) : null}
+            </div>
+
+            {/* Balance trail */}
+            {entry.source_type==='subscription' && (
+              <div className="d-flex justify-content-between align-items-center small border-top pt-2">
+                <div><span className="text-muted">Before:</span> <strong>{entry.balance_before}</strong></div>
+                <i className="fas fa-long-arrow-alt-right text-muted" />
+                <div><span className="text-muted">After:</span> <strong style={{ color:'var(--success)' }}>{entry.balance_after}</strong></div>
               </div>
             )}
-            <div className="d-flex justify-content-between align-items-center small border-top pt-2 mt-2">
-              <span className="text-muted">Before: <strong>{entry.balance_before}</strong></span>
-              <i className="fas fa-long-arrow-alt-right text-muted"/>
-              <span className="text-muted">After: <strong className="text-success">{entry.balance_after}</strong></span>
-            </div>
             {entry.staff && (
-              <div className="text-muted mt-1" style={{fontSize:11}}>
-                <i className="fas fa-user-circle me-1"/>Recorded by {entry.staff}
+              <div className="text-muted mt-1" style={{ fontSize:10 }}>
+                <i className="fas fa-user-circle me-1" />Recorded by {entry.staff}
               </div>
             )}
           </div>
@@ -350,52 +519,73 @@ function UsageLog({ log, loading }) {
           <table className="table mb-0">
             <thead>
               <tr>
-                {['#','Date & Time','Order','Description / Plan(s)','Units Used','Before','After'].map(h=>(
-                  <th key={h} className={`small fw-medium text-muted py-2 ${h==='#'?'ps-4':''} ${h==='After'?'pe-4':''}`} style={{fontSize:11}}>{h}</th>
-                ))}
+                <th className="ps-4 small fw-medium text-muted">#</th>
+                <th className="small fw-medium text-muted">Date & Time</th>
+                <th className="small fw-medium text-muted">Order</th>
+                <th className="small fw-medium text-muted">Description</th>
+                <th className="small fw-medium text-muted">Source / Plan(s)</th>
+                <th className="small fw-medium text-muted text-center">Units</th>
+                <th className="small fw-medium text-muted text-center">Before</th>
+                <th className="small fw-medium text-muted text-center pe-4">After</th>
               </tr>
             </thead>
             <tbody>
-              {log.map((entry,idx)=>(
+              {log.map((entry, idx) => (
                 <tr key={entry.id}>
                   <td className="ps-4 text-muted small">{idx+1}</td>
-                  <td className="small text-muted" style={{whiteSpace:'nowrap'}}>
-                    {new Date(entry.date).toLocaleString('en-NG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
-                  </td>
+                  <td className="small text-muted" style={{ whiteSpace:'nowrap' }}>{fmtDateTime(entry.date)}</td>
                   <td className="small fw-medium">{entry.order_id||'—'}</td>
-                  <td className="small" style={{maxWidth:260}}>
+                  <td className="small" style={{ maxWidth:220 }}>
                     <div>{entry.description}</div>
-                    {entry.merged && entry.breakdown && (
-                      <div className="mt-1 d-flex flex-wrap gap-1">
-                        {entry.breakdown.map((b,i)=>(
-                          <span key={i} className="badge bg-warning bg-opacity-15 text-warning-emphasis" style={{fontSize:10}}>
-                            <i className="fas fa-code-merge me-1"/>{b.plan}: {b.units}u
+                    {entry.staff && (
+                      <div className="text-muted" style={{ fontSize:10 }}>
+                        <i className="fas fa-user-circle me-1" />Recorded by {entry.staff}
+                      </div>
+                    )}
+                  </td>
+                  <td className="small">
+                    {entry.source_type === 'direct' ? (
+                      <span className="badge" style={{ background:'var(--accent-light)',color:'var(--accent-dark)' }}>
+                        <i className="fas fa-credit-card me-1" />Direct — {formatNGN(entry.payment_amount||0)}
+                      </span>
+                    ) : entry.merged && entry.breakdown ? (
+                      <div className="d-flex flex-wrap gap-1">
+                        {entry.breakdown.map((b,i) => (
+                          <span key={i} className="badge" style={{ background:'var(--primary-light)',color:'var(--primary)',fontSize:10 }}>
+                            <i className="fas fa-code-merge me-1" />{b.plan_name}: {b.units}u
                           </span>
                         ))}
                       </div>
-                    )}
-                    {entry.staff && (
-                      <div className="text-muted" style={{fontSize:10}}>
-                        <i className="fas fa-user-circle me-1"/>Recorded by {entry.staff}
-                      </div>
+                    ) : (
+                      <span className="badge" style={{ background:'var(--primary-light)',color:'var(--primary)' }}>
+                        <i className="fas fa-layer-group me-1" />{entry.plan_name||'Subscription'}
+                      </span>
                     )}
                   </td>
                   <td className="text-center">
-                    <span className="badge bg-danger bg-opacity-15 text-danger fw-bold" style={{fontSize:13}}>
-                      −{entry.units_deducted}
-                    </span>
+                    {entry.source_type==='subscription' ? (
+                      <span className="badge" style={{ background:'#fee2e2',color:'var(--danger)',fontSize:13,fontWeight:700 }}>
+                        −{entry.units_deducted}
+                      </span>
+                    ) : (
+                      <span className="text-muted small">—</span>
+                    )}
                   </td>
-                  <td className="text-center small fw-medium text-muted">{entry.balance_before}</td>
-                  <td className="pe-4 text-center small fw-bold text-success">{entry.balance_after}</td>
+                  <td className="text-center small fw-medium text-muted">
+                    {entry.source_type==='subscription' ? entry.balance_before : '—'}
+                  </td>
+                  <td className="pe-4 text-center small fw-bold" style={{ color:entry.source_type==='subscription'?'var(--success)':'var(--text-muted)' }}>
+                    {entry.source_type==='subscription' ? entry.balance_after : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
       <p className="text-muted small text-center mt-3 mb-0">
-        <i className="fas fa-info-circle me-1"/>
-        All deductions are recorded by SimplyLovely staff when your garments are received.
+        <i className="fas fa-lock me-1" />All entries are recorded by Stitch staff. Contact support for disputes.
       </p>
     </div>
   );
@@ -403,57 +593,53 @@ function UsageLog({ log, loading }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Subscriptions() {
-  const { user } = useAuth();
-  const toast = useToast();
+  const { user }   = useAuth();
+  const toast      = useToast();
   const { loadUsage } = useAppData();
 
-  const [plans, setPlans]             = useState(MOCK_PLANS);
-  const [subscriptions, setSubs]      = useState(MOCK_SUBSCRIPTIONS);
-  const [usageLog, setUsageLog]       = useState(MOCK_MY_LOG);
-  const [logLoading, setLogLoading]   = useState(false);
-  const [paying, setPaying]           = useState(null);   // plan.id being processed
-  const [confirm, setConfirm]         = useState(null);   // { action, sub }
-  const [actioning, setActioning]     = useState(null);
-  const [tab, setTab]                 = useState('plans');
-  const [verifying, setVerifying]     = useState(false);
+  const [plans,        setPlans]        = useState(MOCK_PLANS);
+  const [subscriptions,setSubs]         = useState(MOCK_SUBSCRIPTIONS);
+  const [usageLog,     setUsageLog]     = useState(MOCK_MY_LOG);
+  const [logLoading,   setLogLoading]   = useState(false);
+  const [paying,       setPaying]       = useState(null);
+  const [confirm,      setConfirm]      = useState(null);
+  const [actioning,    setActioning]    = useState(null);
+  const [tab,          setTab]          = useState('plans');
+  const [verifying,    setVerifying]    = useState(false);
 
-  // ── Load data ──────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     try {
-      const [plansR, subsR] = await Promise.allSettled([planService.list(), subscriptionService.mySubscriptions()]);
-      if (plansR.status==='fulfilled' && plansR.value?.plans) setPlans(plansR.value.plans);
-      if (subsR.status==='fulfilled'  && subsR.value?.subscriptions) setSubs(subsR.value.subscriptions);
+      const [pr, sr] = await Promise.allSettled([planService.list(), subscriptionService.mySubscriptions()]);
+      if (pr.status==='fulfilled' && pr.value?.plans) setPlans(pr.value.plans);
+      if (sr.status==='fulfilled' && sr.value?.subscriptions) setSubs(sr.value.subscriptions);
     } catch {}
   }, []);
 
   const loadLog = useCallback(async () => {
     setLogLoading(true);
     try {
-      const d = await usageService.list({ mine: 1 });
+      const d = await usageService.list({ mine:1 });
       if (d?.usage) setUsageLog(d.usage);
     } catch {}
     setLogLoading(false);
   }, []);
 
-  // ── Handle Paystack return URL (?verify=1&reference=xxx or ?trxref=xxx) ────
+  // Verify Paystack return
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('reference') || params.get('trxref');
-    const shouldVerify = params.get('verify') === '1' || !!ref;
-    if (ref && shouldVerify) {
-      setVerifying(true);
-      setTab('active');
+    if (ref) {
+      setVerifying(true); setTab('active');
       (async () => {
         try {
           const result = await subscriptionService.verify(ref);
           const pending = sessionStorage.getItem('pending_sub');
-          const planInfo = pending ? JSON.parse(pending) : null;
+          const info    = pending ? JSON.parse(pending) : null;
           sessionStorage.removeItem('pending_sub');
-          toast.success(result?.message || `🎉 Subscription activated! ${planInfo ? planInfo.plan_name + ' plan' : ''} is now active.`);
-          await loadData();
-          await loadUsage();
+          toast.success(result?.message || `✅ ${info?.is_renew ? 'Top-up complete' : 'Subscription active'}! ${info?.plan_name || ''}`);
+          await loadData(); await loadUsage();
         } catch (err) {
-          toast.error('Could not verify payment: ' + err.message + '. Please contact support if units were charged.');
+          toast.error('Could not verify payment: ' + err.message);
         } finally {
           setVerifying(false);
           window.history.replaceState({}, '', window.location.pathname);
@@ -463,40 +649,81 @@ export default function Subscriptions() {
     loadData();
   }, []);
 
-  useEffect(() => { if (tab === 'log') loadLog(); }, [tab]);
+  useEffect(() => { if (tab==='log') loadLog(); }, [tab]);
 
-  // ── Subscribe ──────────────────────────────────────────────────────────────
+  // Find existing sub for a given plan (if any, any status)
+  const existingSubForPlan = (planId) => subscriptions.find(s => s.plan_id===planId);
+  const activeSubForPlan   = (planId) => subscriptions.find(s => s.plan_id===planId && s.status==='active');
+
+  // Totals across ALL subscriptions
+  const activeSubs     = subscriptions.filter(s => s.status==='active');
+  const totalUnits     = subscriptions.reduce((s,sub) => s+(sub.units||0), 0);
+  const totalUsed      = subscriptions.reduce((s,sub) => s+(sub.units_used||0), 0);
+  const totalRemaining = subscriptions.reduce((s,sub) => s+(sub.units_remaining||0), 0);
+
+  // Subscribe to a NEW plan (no active sub for this plan)
   const handleSubscribe = async (plan) => {
+    if (activeSubForPlan(plan.id)) {
+      toast.info(`You already have an active ${plan.name} subscription. Use "Top Up / Renew" instead.`);
+      return;
+    }
     setPaying(plan.id);
     try {
       await initiateSubscription({
-        plan,
-        email: user?.email || '',
-        toast,
+        plan, email: user?.email || '', isRenew: false, toast,
         onSuccess: async (ref, plan) => {
+          toast.success(`🎉 Subscribed to ${plan.name}! ${plan.units} units added.`);
           const newSub = {
             id: Date.now(), plan_id: plan.id, plan_name: plan.name,
             units: plan.units, units_used: 0, units_remaining: plan.units,
-            amount: plan.amount, status: 'active',
+            amount: plan.amount, status:'active', interval:'monthly',
             subscribed_at: new Date().toISOString().split('T')[0],
-            renews_at: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+            renews_at: new Date(Date.now()+30*86400000).toISOString().split('T')[0],
             payment_ref: ref,
           };
           setSubs(prev => [...prev, newSub]);
-          toast.success(`✅ Subscribed to ${plan.name}! ${plan.units} units added.`);
-          await loadData();
-          await loadUsage();
+          await loadData(); await loadUsage();
         },
         onClose: () => toast.info('Payment window closed.'),
       });
     } catch (err) {
       toast.error('Subscription failed: ' + err.message);
-    } finally {
-      setPaying(null);
-    }
+    } finally { setPaying(null); }
   };
 
-  // ── Manage actions (pause/resume/cancel/manage_link) ──────────────────────
+  // Top Up / Renew existing plan: add units + reset billing period
+  const handleRenew = async (plan) => {
+    const existing = existingSubForPlan(plan.id);
+    setPaying(plan.id);
+    try {
+      await initiateSubscription({
+        plan, email: user?.email || '', isRenew: true, toast,
+        onSuccess: async (ref, plan) => {
+          toast.success(`🔄 ${plan.name} topped up! +${plan.units} units, billing period reset from today.`);
+          // Top-up: add units to existing sub and reset renewal date
+          setSubs(prev => prev.map(s => {
+            if (s.plan_id !== plan.id) return s;
+            return {
+              ...s,
+              units:          plan.units,           // reset to plan quota
+              units_used:     0,                    // reset used counter
+              units_remaining: plan.units,          // fresh units
+              status:         'active',
+              subscribed_at:  new Date().toISOString().split('T')[0],
+              renews_at:      new Date(Date.now()+30*86400000).toISOString().split('T')[0],
+              payment_ref:    ref,
+            };
+          }));
+          await loadData(); await loadUsage();
+        },
+        onClose: () => toast.info('Payment window closed.'),
+      });
+    } catch (err) {
+      toast.error('Top-up failed: ' + err.message);
+    } finally { setPaying(null); }
+  };
+
+  // Manage actions
   const handleAction = async (sub, action) => {
     if (action === 'manage_link') {
       try {
@@ -507,19 +734,13 @@ export default function Subscriptions() {
       return;
     }
     if (action === 'resume') {
-      // Resume doesn't need a confirm modal
       setActioning(sub.id);
-      try {
-        await subscriptionService.resume(sub.id);
-        setSubs(prev => prev.map(s => s.id===sub.id ? {...s, status:'active'} : s));
-        toast.success(`"${sub.plan_name}" subscription resumed.`);
-      } catch {
-        setSubs(prev => prev.map(s => s.id===sub.id ? {...s, status:'active'} : s));
-        toast.success(`Subscription resumed (demo).`);
-      } finally { setActioning(null); }
+      try { await subscriptionService.resume(sub.id); } catch {}
+      setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:'active'} : s));
+      toast.success(`"${sub.plan_name}" subscription resumed.`);
+      setActioning(null);
       return;
     }
-    // cancel / pause → show confirm modal
     setConfirm({ action, sub });
   };
 
@@ -529,76 +750,69 @@ export default function Subscriptions() {
     setConfirm(null);
     setActioning(sub.id);
     try {
-      if (action === 'cancel') {
-        await subscriptionService.cancel(sub.id);
-        setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:'cancelled'} : s));
-        toast.success(`"${sub.plan_name}" subscription cancelled. Remaining units still usable.`);
-      } else if (action === 'pause') {
-        await subscriptionService.pause(sub.id);
-        setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:'paused'} : s));
-        toast.success(`"${sub.plan_name}" paused. No further charges.`);
-      }
-    } catch {
-      // Demo: still update UI
-      if (action === 'cancel') setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:'cancelled'} : s));
-      if (action === 'pause')  setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:'paused'} : s));
-      toast.success(`${action === 'cancel' ? 'Cancelled' : 'Paused'} (demo).`);
-    } finally { setActioning(null); }
+      if (action==='cancel') { await subscriptionService.cancel(sub.id); }
+      if (action==='pause')  { await subscriptionService.pause(sub.id); }
+    } catch {}
+    setSubs(prev => prev.map(s => s.id===sub.id ? {...s,status:action==='cancel'?'cancelled':'paused'} : s));
+    toast.success(action==='cancel'
+      ? `"${sub.plan_name}" cancelled. Units usable until period end.`
+      : `"${sub.plan_name}" paused. No further charges.`);
+    setActioning(null);
   };
 
-  // ── Totals ─────────────────────────────────────────────────────────────────
-  const activeSubs     = subscriptions.filter(s => s.status === 'active');
-  const activePlanIds  = activeSubs.map(s => s.plan_id);
-  const totalUnits     = subscriptions.reduce((s,sub) => s + (sub.units||0), 0);
-  const totalUsed      = subscriptions.reduce((s,sub) => s + (sub.units_used||0), 0);
-  const totalRemaining = subscriptions.reduce((s,sub) => s + (sub.units_remaining||0), 0);
+  const TABS = [
+    { key:'plans',  label:'Available Plans',             icon:'fa-layer-group' },
+    { key:'active', label:`My Plans (${subscriptions.length})`, icon:'fa-check-circle' },
+    { key:'log',    label:`Usage Log (${usageLog.length})`,     icon:'fa-chart-bar' },
+  ];
 
   return (
     <div>
       {/* Verifying overlay */}
       {verifying && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div className="bg-white rounded-3 p-4 text-center shadow-lg" style={{maxWidth:300}}>
-            <div className="spinner-border text-primary mb-3" role="status"/>
-            <div className="fw-semibold">Verifying Payment</div>
-            <div className="text-muted small">Please wait while we confirm your subscription…</div>
+        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center' }}>
+          <div className="bg-white rounded-3 p-4 text-center shadow-lg" style={{ maxWidth:300 }}>
+            <div className="spinner-border mb-3" role="status" style={{ color:'var(--primary)' }} />
+            <div className="fw-semibold" style={{ fontFamily:'var(--font-heading)' }}>Verifying Payment</div>
+            <div className="text-muted small mt-1">Confirming your subscription…</div>
           </div>
         </div>
       )}
 
       <SectionHeader
         title="My Subscriptions"
-        subtitle="Subscribe to volume plans, track usage and manage your laundry units"
+        subtitle="Manage your volume plans and track unit usage"
       />
 
-      {/* Volume banner (only if has any sub) */}
+      {/* Volume banner */}
       {subscriptions.length > 0 && (
-        <div className="rounded-3 p-4 mb-4 text-white" style={{background:'linear-gradient(135deg,#1a56db 0%,#0ea5e9 100%)'}}>
+        <div className="rounded-3 p-4 mb-4 text-white"
+          style={{ background:'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' }}>
           <div className="row g-3 align-items-center">
             <div className="col-md-6">
-              <div className="opacity-75 small fw-medium mb-1">Total Volume Balance</div>
+              <div className="opacity-75 small fw-medium mb-1" style={{ fontFamily:'var(--font-heading)' }}>Total Volume Balance</div>
               <div className="d-flex align-items-baseline gap-2 mb-2">
-                <span className="fw-bold" style={{fontSize:'2.5rem',lineHeight:1}}>{totalRemaining}</span>
+                <span className="fw-bold" style={{ fontSize:'2.5rem',lineHeight:1,fontFamily:'var(--font-heading)' }}>{totalRemaining}</span>
                 <span className="opacity-75">units remaining</span>
               </div>
-              <div className="progress mb-1" style={{height:6,background:'rgba(255,255,255,0.3)',borderRadius:4}}>
+              <div className="progress mb-1" style={{ height:6,background:'rgba(255,255,255,0.25)',borderRadius:4 }}>
                 <div className="progress-bar bg-white"
-                  style={{width:`${totalUnits ? Math.round((totalRemaining/totalUnits)*100) : 0}%`,borderRadius:4}}/>
+                  style={{ width:`${totalUnits?Math.round((totalRemaining/totalUnits)*100):0}%`,borderRadius:4 }} />
               </div>
-              <div className="opacity-75 small">{totalUsed} used · {totalUnits} total across all plans</div>
+              <div className="opacity-75 small">{totalUsed} used · {totalUnits} total across {activeSubs.length} active plan(s)</div>
             </div>
             <div className="col-md-6">
               <div className="row g-2">
                 {[
-                  {label:'Active Plans',   value:activeSubs.length},
-                  {label:'Total Units',    value:totalUnits},
-                  {label:'Units Used',     value:totalUsed},
-                  {label:'Usage Records',  value:usageLog.length},
-                ].map(s=>(
+                  { label:'Active Plans',   value:activeSubs.length },
+                  { label:'Total Units',    value:totalUnits },
+                  { label:'Units Used',     value:totalUsed },
+                  { label:'Usage Records',  value:usageLog.length },
+                ].map(s => (
                   <div key={s.label} className="col-6">
-                    <div className="rounded-3 p-2 text-center" style={{background:'rgba(255,255,255,0.15)'}}>
-                      <div className="fw-bold fs-5">{s.value}</div>
-                      <div className="opacity-75" style={{fontSize:11}}>{s.label}</div>
+                    <div className="rounded-3 p-2 text-center" style={{ background:'rgba(255,255,255,0.15)' }}>
+                      <div className="fw-bold fs-5" style={{ fontFamily:'var(--font-heading)' }}>{s.value}</div>
+                      <div className="opacity-75" style={{ fontSize:11 }}>{s.label}</div>
                     </div>
                   </div>
                 ))}
@@ -610,54 +824,61 @@ export default function Subscriptions() {
 
       {/* Tabs */}
       <ul className="nav nav-tabs mb-4">
-        {[
-          {key:'plans',  label:'Available Plans',           icon:'fa-layer-group'},
-          {key:'active', label:`My Plans (${subscriptions.length})`, icon:'fa-check-circle'},
-          {key:'log',    label:`Usage Log (${usageLog.length})`,     icon:'fa-chart-bar'},
-        ].map(t=>(
+        {TABS.map(t => (
           <li key={t.key} className="nav-item">
-            <button className={`nav-link ${tab===t.key?'active':''}`} onClick={()=>setTab(t.key)}>
-              <i className={`fas ${t.icon} me-2 d-none d-sm-inline`}/>{t.label}
+            <button className={`nav-link ${tab===t.key?'active':''}`} onClick={() => setTab(t.key)}>
+              <i className={`fas ${t.icon} me-2 d-none d-sm-inline`} />{t.label}
             </button>
           </li>
         ))}
       </ul>
 
-      {/* ── Plans tab ── */}
+      {/* Plans tab */}
       {tab === 'plans' && (
         <>
-          <div className="alert alert-info small mb-4 d-flex gap-3 align-items-start">
-            <i className="fas fa-code-merge text-info mt-1 flex-shrink-0"/>
+          <div className="alert alert-info small mb-4 d-flex gap-3 align-items-start" style={{ borderColor:'var(--info)', background:'#e0f2fe' }}>
+            <i className="fas fa-circle-info mt-1 flex-shrink-0" style={{ color:'var(--info)' }} />
             <div>
-              <strong>Multi-plan merging supported.</strong> Subscribe to multiple plans — units pool together.
-              When paying for an order you can split the deduction across plans.
-              Plans auto-renew monthly via Paystack recurring billing.
+              <strong>How plans work:</strong> Subscribe to one or more <em>different</em> plans simultaneously — units pool together.
+              If you already have a plan, top it up to add fresh units and reset the billing period.
+              Same plan = top-up. Different plan = subscribe in parallel. All units usable together.
             </div>
           </div>
           <div className="row g-4">
-            {plans.map(plan=>(
+            {plans.map(plan => (
               <div key={plan.id} className="col-md-4">
-                <PlanCard plan={plan} activePlanIds={activePlanIds} onSubscribe={handleSubscribe} loading={paying}/>
+                <PlanCard
+                  plan={plan}
+                  existingSub={existingSubForPlan(plan.id)}
+                  onSubscribe={handleSubscribe}
+                  onRenew={handleRenew}
+                  loading={paying}
+                />
               </div>
             ))}
           </div>
+
           {/* How it works */}
-          <div className="bg-light rounded-3 p-4 mt-4">
-            <h6 className="fw-semibold mb-3"><i className="fas fa-info-circle text-primary me-2"/>How subscriptions work</h6>
+          <div className="bg-light rounded-3 p-4 mt-4 border">
+            <h6 className="fw-semibold mb-3" style={{ fontFamily:'var(--font-heading)' }}>
+              <i className="fas fa-info-circle me-2" style={{ color:'var(--primary)' }} />How subscriptions work
+            </h6>
             <div className="row g-3">
               {[
-                {step:'1',title:'Pick a Plan',  desc:'Subscribe to one or more plans. Units are pooled together.'},
-                {step:'2',title:'Pay via Paystack',desc:'Card, transfer or USSD. Auto-renews monthly — cancel anytime.'},
-                {step:'3',title:'Use for Orders', desc:'Select "Pay from Subscription" when creating an order. Split across plans.'},
-                {step:'4',title:'Track Everything',desc:'Full log of every unit deduction with before/after balance.'},
-              ].map(s=>(
+                { step:'1', title:'Pick a Plan', desc:'Choose any plan. You can run multiple different plans at once.' },
+                { step:'2', title:'Pay via Paystack', desc:'Inline popup — card, transfer or USSD. Auto-renews each billing period.' },
+                { step:'3', title:'Units Pool Together', desc:'All your plan units combine. Use any for any order.' },
+                { step:'4', title:'Top Up Anytime', desc:'Same plan → top up & reset. New plan → subscribe in parallel.' },
+              ].map(s => (
                 <div key={s.step} className="col-sm-6 col-lg-3">
                   <div className="d-flex gap-3">
-                    <div className="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold flex-shrink-0"
-                      style={{width:28,height:28,fontSize:12}}>{s.step}</div>
+                    <div className="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold flex-shrink-0"
+                      style={{ width:28,height:28,fontSize:12,background:'var(--primary)' }}>
+                      {s.step}
+                    </div>
                     <div>
                       <div className="fw-medium small">{s.title}</div>
-                      <div className="text-muted" style={{fontSize:11}}>{s.desc}</div>
+                      <div className="text-muted" style={{ fontSize:11 }}>{s.desc}</div>
                     </div>
                   </div>
                 </div>
@@ -667,29 +888,30 @@ export default function Subscriptions() {
         </>
       )}
 
-      {/* ── My Plans tab ── */}
+      {/* My Plans tab */}
       {tab === 'active' && (
         <>
-          {subscriptions.length === 0 ? (
+          {subscriptions.length===0 ? (
             <div className="text-center py-5 text-muted">
-              <i className="fas fa-layer-group fa-3x d-block mb-3 opacity-25"/>
+              <i className="fas fa-layer-group fa-3x d-block mb-3 opacity-25" />
               <p className="mb-3">No subscriptions yet.</p>
               <button className="btn btn-primary" onClick={()=>setTab('plans')}>Browse Plans</button>
             </div>
           ) : (
             <>
               <p className="text-muted small mb-4">
-                Units from all active plans pool together. Paused plans retain your units but stop billing.
-                Cancelled plans remain usable until period end.
+                <i className="fas fa-circle-info me-1" style={{ color:'var(--primary)' }} />
+                Units from all active plans pool together. Paused plans retain units but suspend billing.
+                Cancelled plans remain usable until end of billing period.
               </p>
-              {subscriptions.map(sub=>(
-                <div key={sub.id} style={{opacity: actioning===sub.id ? 0.6 : 1, transition:'opacity 0.2s'}}>
-                  <SubscriptionCard sub={sub} onAction={handleAction}/>
+              {subscriptions.map(sub => (
+                <div key={sub.id} style={{ opacity:actioning===sub.id?0.6:1,transition:'opacity 0.2s' }}>
+                  <SubscriptionCard sub={sub} onAction={handleAction} />
                 </div>
               ))}
               <div className="text-center mt-2">
                 <button className="btn btn-outline-primary btn-sm" onClick={()=>setTab('plans')}>
-                  <i className="fas fa-plus me-2"/>Add Another Plan
+                  <i className="fas fa-plus me-2" />Add or Top Up a Plan
                 </button>
               </div>
             </>
@@ -697,24 +919,18 @@ export default function Subscriptions() {
         </>
       )}
 
-      {/* ── Usage Log tab ── */}
+      {/* Usage Log tab */}
       {tab === 'log' && (
         <>
           <p className="text-muted small mb-4">
-            Every unit deduction recorded by SimplyLovely staff when your garments are received and processed.
+            Every unit deduction is recorded by Stitch staff when your garments are received. Direct-pay orders show the amount charged instead.
           </p>
-          <UsageLog log={usageLog} loading={logLoading}/>
+          <UsageLogTab log={usageLog} loading={logLoading} />
         </>
       )}
 
-      {/* Confirm modal */}
       {confirm && (
-        <ConfirmModal
-          action={confirm.action}
-          sub={confirm.sub}
-          onConfirm={handleConfirmed}
-          onClose={()=>setConfirm(null)}
-        />
+        <ConfirmModal action={confirm.action} sub={confirm.sub} onConfirm={handleConfirmed} onClose={()=>setConfirm(null)} />
       )}
     </div>
   );

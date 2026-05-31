@@ -216,7 +216,7 @@ export default function Profile() {
               {user?.name?.charAt(0) || '?'}
             </div>
             <div>
-              <h5 className="fw-bold mb-0" style={{ fontFamily: 'var(--font-display)' }}>{user?.name}</h5>
+              <h5 className="fw-bold mb-0" style={{ fontFamily: 'var(--font-heading)' }}>{user?.name}</h5>
               <div className="text-muted small">{user?.email}</div>
               <span className="badge bg-primary mt-1" style={{ fontSize: 10 }}>{user?.role}</span>
             </div>
@@ -264,11 +264,11 @@ export default function Profile() {
                 <div className="bg-light rounded-3 p-3">
                   <div className="text-muted small mb-1">Referral Code</div>
                   <div className="input-group input-group-sm">
-                    <input className="form-control" readOnly value={user?.referral_code || 'SL-ADAEZE'} />
+                    <input className="form-control" readOnly value={user?.referral_code || 'ST-ADAEZE'} />
                     <button
                       className="btn btn-outline-primary"
                       onClick={() => {
-                        navigator.clipboard.writeText(user?.referral_code || 'SL-ADAEZE');
+                        navigator.clipboard.writeText(user?.referral_code || 'ST-ADAEZE');
                         toast.success('Copied!');
                       }}
                     >

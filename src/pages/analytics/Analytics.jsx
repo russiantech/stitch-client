@@ -19,7 +19,7 @@ function BarChart({ data, maxValue, color = 'bg-primary' }) {
   );
 }
 
-function DonutRing({ percentage, color = '#0d6efd', size = 80 }) {
+function DonutRing({ percentage, color = 'var(--primary)', size = 80 }) {
   const r = 30;
   const circ = 2 * Math.PI * r;
   const offset = circ - (percentage / 100) * circ;
@@ -155,7 +155,7 @@ export default function Analytics() {
             <h6 className="fw-semibold mb-4">Order Mix</h6>
             <div className="d-flex flex-column gap-3">
               {[
-                { label: 'Laundry', value: MOCK_ANALYTICS.orders.laundry, total: MOCK_ANALYTICS.orders.total, color: '#0d6efd' },
+                { label: 'Laundry', value: MOCK_ANALYTICS.orders.laundry, total: MOCK_ANALYTICS.orders.total, color: 'var(--primary)' },
                 { label: 'Fashion', value: MOCK_ANALYTICS.orders.fashion, total: MOCK_ANALYTICS.orders.total, color: '#0dcaf0' },
               ].map(item => {
                 const pct = Math.round((item.value / item.total) * 100);

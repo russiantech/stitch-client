@@ -87,7 +87,7 @@ export function SectionHeader({ title, subtitle, actions }) {
   return (
     <div className="d-flex align-items-start justify-content-between gap-3 mb-4">
       <div>
-        <h4 className="mb-0 fw-semibold" style={{ fontFamily: 'var(--font-display)' }}>{title}</h4>
+        <h4 className="mb-0 fw-semibold" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h4>
         {subtitle && <p className="text-muted mb-0 small mt-1">{subtitle}</p>}
       </div>
       {actions && <div className="d-flex gap-2 flex-shrink-0">{actions}</div>}
@@ -108,7 +108,7 @@ export function OrderTimeline({ statuses, currentStatus }) {
             <div className="step-dot">
               {isCompleted && <i className="fas fa-check" style={{ fontSize: 8, color: '#fff', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />}
             </div>
-            <div style={{ fontSize: 13, color: isActive ? 'var(--sl-primary)' : isCompleted ? 'var(--sl-success)' : 'var(--sl-muted)' }}>
+            <div style={{ fontSize: 13, color: isActive ? 'var(--primary)' : isCompleted ? 'var(--success)' : 'var(--text-muted)' }}>
               {status}
             </div>
           </div>

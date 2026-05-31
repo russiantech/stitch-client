@@ -30,7 +30,7 @@ export default function CustomerDashboard() {
     <div>
       {/* Welcome */}
       <div className="mb-4">
-        <h4 className="fw-semibold mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+        <h4 className="fw-semibold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
           Good day, {user?.name?.split(' ')[0] || 'there'} 👋
         </h4>
         <p className="text-muted mb-0 small">Here's an overview of your laundry & fashion services.</p>

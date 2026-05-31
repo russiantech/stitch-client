@@ -103,14 +103,14 @@ function PayModal({ invoice, onClose, onSuccess }) {
     setLoading(true);
     try {
       if (method === 'paystack') {
-        const ref = `SL-INV-${invoice.id}-${Date.now()}`;
+        const ref = `ST-INV-${invoice.id}-${Date.now()}`;
 
         // ── 1. Try inline popup first ────────────────────────────────────────
         if (window.PaystackPop) {
           await new Promise((resolve, reject) => {
             const handler = window.PaystackPop.setup({
               key: PAYSTACK_KEY,
-              email: user?.email || 'customer@simplylovely.ng',
+              email: user?.email || 'customer@stitch.ng',
               amount: amount * 100,
               currency: 'NGN',
               ref,
@@ -225,7 +225,7 @@ function ViewInvoiceModal({ invoice, onClose }) {
           </div>
           <div className="modal-body">
             <div className="text-center mb-4 pb-3 border-bottom">
-              <div className="fw-bold fs-5 mb-1" style={{fontFamily:'var(--font-display)'}}>SimplyLovely</div>
+              <div className="fw-bold fs-5 mb-1" style={{fontFamily:'var(--font-heading)'}}>Stitch</div>
               <div className="text-muted small">Laundry & Fashion Services</div>
             </div>
             <div className="d-flex justify-content-between mb-3">

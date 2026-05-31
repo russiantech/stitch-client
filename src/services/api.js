@@ -2,8 +2,8 @@
 
 const getApiUrl = () => {
   const h = window.location.hostname;
-  if (h === 'simplylovely.ng' || h.endsWith('.simplylovely.ng'))
-    return 'https://api.simplylovely.ng/api';
+  if (h === 'stitch.ng' || h.endsWith('.stitch.ng'))
+    return 'https://api.stitch.ng/api';
   return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 };
 
@@ -79,7 +79,7 @@ export const planService = {
 // ─── SUBSCRIPTIONS ────────────────────────────────────────────────────────────
 // Paystack recurring subscriptions:
 //   1. Admin creates a Plan in Paystack dashboard → gets a plan_code (PLN_xxx)
-//   2. Backend stores plan_code against each SimplyLovely plan
+//   2. Backend stores plan_code against each Stitch plan
 //   3. Customer subscribes → we call /payment/:planId/paystack which returns a
 //      Paystack authorization_url (hosted checkout) or we use Paystack inline
 //      with the plan code for recurring billing
@@ -95,7 +95,7 @@ export const subscriptionService = {
   forUser: (uid) => apiRequest(`/subscriptions/user/${uid}`),
 
   // ── Initiate subscription (returns { authorization_url, reference, access_code })
-  // planId = SimplyLovely plan id; backend maps to Paystack plan_code for recurring
+  // planId = Stitch plan id; backend maps to Paystack plan_code for recurring
   initiate: (planId, email) =>
     apiRequest(`/payment/${planId}/paystack`, {
       method: 'POST',

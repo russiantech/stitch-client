@@ -130,7 +130,7 @@ export default function FashionRequest() {
               <div className="d-flex gap-3">
                 {[
                   { val: 'customer', label: 'I will provide fabric' },
-                  { val: 'simplylovely', label: 'SimplyLovely will source' },
+                  { val: 'stitch', label: 'Stitch will source' },
                 ].map(o => (
                   <div key={o.val} className="form-check">
                     <input className="form-check-input" type="radio" name="fabric" id={`fab-${o.val}`}
@@ -231,7 +231,7 @@ export default function FashionRequest() {
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span className="small text-muted">Fabric</span>
-              <span className="small fw-medium">{form.fabric_source === 'customer' ? 'Customer providing' : 'SimplyLovely sourcing'}</span>
+              <span className="small fw-medium">{form.fabric_source === 'customer' ? 'Customer providing' : 'Stitch sourcing'}</span>
             </div>
             {form.preferred_delivery && (
               <div className="d-flex justify-content-between mb-2">

@@ -46,10 +46,10 @@ export default function SignIn() {
 
   const demoLogin = (role) => {
     const users = {
-      admin:    { id:1, name:'Adaeze Okonkwo',  email:'adaeze@simplylovely.ng',  role:'admin',    username:'adaeze' },
+      admin:    { id:1, name:'Adaeze Okonkwo',  email:'adaeze@stitch.ng',  role:'admin',    username:'adaeze' },
       customer: { id:2, name:'Chiamaka Eze',    email:'chiamaka@gmail.com',       role:'customer', username:'chiamaka' },
-      staff:    { id:5, name:'Chioma Uzoma',    email:'chioma@simplylovely.ng',   role:'staff',    username:'chioma' },
-      driver:   { id:4, name:'Segun Adeola',    email:'segun@simplylovely.ng',    role:'driver',   username:'segun' },
+      staff:    { id:5, name:'Chioma Uzoma',    email:'chioma@stitch.ng',   role:'staff',    username:'chioma' },
+      driver:   { id:4, name:'Segun Adeola',    email:'segun@stitch.ng',    role:'driver',   username:'segun' },
     };
     const u = users[role];
     localStorage.setItem('access_token', `demo-token-${role}`);
@@ -61,8 +61,8 @@ export default function SignIn() {
     <div className="auth-wrapper">
       <div className="auth-card">
         <div className="text-center mb-4">
-          <div className="fs-3 text-primary fw-bold mb-1" style={{fontFamily:'var(--font-display)'}}>
-            <i className="fas fa-heart-pulse text-danger me-2"/>SimplyLovely
+          <div className="fs-3 text-primary fw-bold mb-1" style={{fontFamily:'var(--font-heading)'}}>
+            <span className="brand-scissors me-2"><i className="fas fa-scissors"/></span>Stitch
           </div>
           <p className="text-muted small mb-0">Laundry & Fashion Operations</p>
         </div>
