@@ -1,4 +1,4 @@
-# SimplyLovely — Laundry & Fashion SaaS Platform
+# Stitch — Laundry & Fashion SaaS Platform
 
 A modern, full-featured React SaaS platform for Laundry & Fashion Operations Management.
 
