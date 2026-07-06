@@ -1,0 +1,238 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { StatusBadge, SectionHeader, OrderTimeline, EmptyState, LoadingSpinner } from '@/components/shared/index.tsx';
+import { orderService } from '@/services/api.ts';
+import { LAUNDRY_STATUSES, formatNGN } from '@/services/mockData.ts';
+import { useToast } from '@/context/ToastContext.tsx';
+import type { LaundryOrder, LaundryStatus } from '@/types/index.ts';
+
+const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
+const STATUSES = LAUNDRY_STATUSES as readonly LaundryStatus[];
+
+export default function LaundryOrders() {
+  const toast = useToast();
+  const [orders, setOrders] = useState<LaundryOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<LaundryOrder | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await orderService.list({ order_type: 'laundry', page_size: 100 });
+      setOrders(data.items.filter((o): o is LaundryOrder => 'garment_items' in o));
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = orders.filter(o => {
+    const matchStatus = filter ? o.status === filter : true;
+    const matchSearch = search
+      ? (o.customer_name || '').toLowerCase().includes(search.toLowerCase()) || o.reference.toLowerCase().includes(search.toLowerCase())
+      : true;
+    return matchStatus && matchSearch;
+  });
+
+  const openOrder = (order: LaundryOrder) => { setSelected(order); setShowModal(true); };
+
+  const nextStatus = (current: string, direction: 'advance' | 'reverse'): LaundryStatus => {
+    const idx = STATUSES.indexOf(current as LaundryStatus);
+    const safeIdx = idx === -1 ? 0 : idx;
+    return direction === 'advance'
+      ? STATUSES[Math.min(safeIdx + 1, STATUSES.length - 1)]
+      : STATUSES[Math.max(safeIdx - 1, 0)];
+  };
+
+  const changeStatus = useCallback(async (orderId: number, direction: 'advance' | 'reverse') => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const next = nextStatus(order.status, direction);
+    if (next === order.status) return;
+
+    try {
+      const updated = await orderService.updateStatus(orderId, next, undefined, direction === 'reverse');
+      setOrders(prev => prev.map(o => o.id === orderId ? (updated as LaundryOrder) : o));
+      setSelected(prev => prev && prev.id === orderId ? (updated as LaundryOrder) : prev);
+      toast.success(`Status ${direction === 'advance' ? 'advanced' : 'reversed'} to ${next}`);
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  }, [orders]);
+
+  return (
+    <div>
+      <SectionHeader
+        title="Laundry Orders"
+        subtitle="Manage and track all laundry service orders"
+      />
+
+      <div className="d-flex flex-wrap gap-2 mb-3">
+        {STATUSES.map(s => {
+          const count = orders.filter(o => o.status === s).length;
+          if (!count) return null;
+          return (
+            <button key={s} className={`btn btn-sm ${filter === s ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setFilter(filter === s ? '' : s)}>
+              {s} <span className="badge bg-white text-dark ms-1">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="bg-white rounded-3 border p-3 mb-4 d-flex flex-wrap gap-2 align-items-center">
+        <input className="form-control form-control-sm" style={{ maxWidth: 220 }} placeholder="Search order or customer…"
+          value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="form-select form-select-sm" style={{ maxWidth: 180 }} value={filter} onChange={e => setFilter(e.target.value)}>
+          <option value="">All Statuses</option>
+          {STATUSES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        {(filter || search) && (
+          <button className="btn btn-outline-secondary btn-sm" onClick={() => { setFilter(''); setSearch(''); }}>Clear</button>
+        )}
+        <span className="text-muted small ms-auto">{filtered.length} orders</span>
+      </div>
+
+      <div className="bg-white rounded-3 border overflow-hidden">
+        {loading ? <LoadingSpinner /> : (
+          <div className="table-responsive">
+            <table className="table mb-0">
+              <thead>
+                <tr>
+                  <th className="ps-4 small fw-medium text-muted">Order Ref</th>
+                  <th className="small fw-medium text-muted">Customer</th>
+                  <th className="small fw-medium text-muted">Items</th>
+                  <th className="small fw-medium text-muted">Status</th>
+                  <th className="small fw-medium text-muted">Priority</th>
+                  <th className="small fw-medium text-muted">Payment</th>
+                  <th className="small fw-medium text-muted">Pickup</th>
+                  <th className="small fw-medium text-muted text-end pe-4">Amount</th>
+                  <th className="small fw-medium text-muted">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={9}><EmptyState icon="fa-box-open" title="No orders found" /></td></tr>
+                ) : filtered.map(order => (
+                  <tr key={order.id} style={{ cursor: 'pointer' }} onClick={() => openOrder(order)}>
+                    <td className="ps-4 fw-medium small">{order.reference}</td>
+                    <td>
+                      <div className="small fw-medium">{order.customer_name || '—'}</div>
+                      <div className="text-muted" style={{ fontSize: 11 }}>{order.customer_phone}</div>
+                    </td>
+                    <td className="small">{order.garment_count ?? order.garment_items.length}</td>
+                    <td><StatusBadge status={order.status} /></td>
+                    <td>
+                      <span className={`badge ${order.priority === 'Express' ? 'bg-danger' : 'bg-light text-muted border'}`} style={{ fontSize: 10 }}>
+                        {order.priority}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${order.payment_method === 'subscription' ? 'bg-primary bg-opacity-25 text-primary' : 'bg-success bg-opacity-25 text-success'}`} style={{ fontSize: 10 }}>
+                        {order.payment_method === 'subscription' ? 'Sub' : 'Direct'}
+                      </span>
+                    </td>
+                    <td className="small text-muted">{order.pickup_date || '—'}</td>
+                    <td className="text-end pe-4 fw-medium small">{formatNGN(order.total_amount)}</td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <div className="d-flex gap-1">
+                        <button
+                          className="btn btn-xs btn-outline-secondary"
+                          style={{ fontSize: 11, padding: '2px 7px' }}
+                          title="Reverse status"
+                          onClick={() => changeStatus(order.id, 'reverse')}
+                          disabled={order.status === STATUSES[0]}
+                        ><i className="fas fa-arrow-left" /></button>
+                        <button
+                          className="btn btn-xs btn-outline-primary"
+                          style={{ fontSize: 11, padding: '2px 7px' }}
+                          title="Advance status"
+                          onClick={() => changeStatus(order.id, 'advance')}
+                          disabled={order.status === 'Completed' || order.status === 'Cancelled'}
+                        ><i className="fas fa-arrow-right" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showModal && selected && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title fw-semibold">Order {selected.reference}</h6>
+                <button className="btn-close" onClick={() => setShowModal(false)} />
+              </div>
+              <div className="modal-body">
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="mb-3"><div className="text-muted small mb-1">Customer</div>
+                      <div className="fw-medium">{selected.customer_name || '—'}</div>
+                      <div className="text-muted small">{selected.customer_phone}</div>
+                    </div>
+                    <div className="mb-3"><div className="text-muted small mb-1">Garments</div>
+                      {selected.garment_items.length > 0 ? (
+                        <ul className="list-unstyled small mb-0">
+                          {selected.garment_items.map(g => (
+                            <li key={g.id} className="d-flex justify-content-between">
+                              <span>{g.quantity}× {g.garment_name}</span>
+                              <span className="fw-medium">{formatNGN(g.line_total)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <div className="fw-medium">{selected.garment_count ?? 0} garments</div>}
+                    </div>
+                    <div className="mb-3"><div className="text-muted small mb-1">Address</div><div className="small">{selected.delivery_address}</div></div>
+                    <div className="mb-3">
+                      <div className="text-muted small mb-1">Payment</div>
+                      <span className={`badge ${selected.payment_method === 'subscription' ? 'bg-primary' : 'bg-success'}`}>
+                        {selected.payment_method === 'subscription' ? 'Subscription' : 'Direct / Paystack'}
+                      </span>
+                    </div>
+                    <div className="mb-4"><div className="text-muted small mb-1">Total</div>
+                      <div className="fw-bold text-primary fs-5">{formatNGN(selected.total_amount)}</div>
+                    </div>
+                    {selected.special_instructions && (
+                      <div className="alert alert-warning py-2 small mb-3">
+                        <i className="fas fa-sticky-note me-2" />{selected.special_instructions}
+                      </div>
+                    )}
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-outline-secondary btn-sm"
+                        onClick={() => changeStatus(selected.id, 'reverse')}
+                        disabled={selected.status === STATUSES[0]}
+                      ><i className="fas fa-arrow-left me-1" />Reverse</button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => changeStatus(selected.id, 'advance')}
+                        disabled={selected.status === 'Completed' || selected.status === 'Cancelled'}
+                      ><i className="fas fa-arrow-right me-1" />Advance</button>
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="text-muted small mb-2">Order Progress</div>
+                    <OrderTimeline statuses={STATUSES as unknown as string[]} currentStatus={selected.status} />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => setShowModal(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
