@@ -148,8 +148,8 @@ async function initiateSubscription({ plan, email, isRenew, onSuccess, onClose, 
 }) {
   const actionLabel = isRenew ? 'top-up' : 'subscription';
 
-  // Backend always initializes with Paystack first — this is the single source of truth
-  // for the reference (format: ST-SUB-20260705193105-D116F0, from generate_reference()).
+  // Backend always initializes with Paystack first — single source of truth
+  // for the reference (format: ST-SUB-20260706122612-4682AB, from generate_reference()).
   let res;
   try {
     res = await subscriptionService.initiate(plan.id, email);
@@ -165,8 +165,9 @@ async function initiateSubscription({ plan, email, isRenew, onSuccess, onClose, 
   }));
 
   // Prefer inline — resume the SAME transaction/reference the backend already created.
-  if ((window as any).PaystackPop && access_code) {
-    const popup: any = (window as any).PaystackPop;
+  const PaystackPop = (window as any).PaystackPop;
+  if (PaystackPop && access_code) {
+    const popup = new PaystackPop();
     popup.resumeTransaction(access_code, {
       onSuccess: async (response: { reference: string }) => {
         toast.info('Verifying payment…');
