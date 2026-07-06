@@ -17,13 +17,17 @@ const ROLES: UserRole[] = ['customer', 'staff', 'driver', 'manager', 'admin'];
 // ─── Invite User Modal ─────────────────────────────────────────────────────────
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (u: User) => void }) {
   const toast = useToast();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'customer' as UserRole });
+  const [form, setForm] = useState({ names: '', email: '', phone: '', roles: ['customer'] as UserRole[], });
   const [saving, setSaving] = useState(false);
-  const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm(p => ({ ...p, [k]: e.target.value }));
+  
+  // const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  // For the role select, handle the array wrapping:
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => setForm(p => ({ ...p, roles: [e.target.value as UserRole] }));
 
   const handleSend = async () => {
-    if (!form.name.trim() || !form.email.trim()) return toast.error('Name and email are required');
+    if (!form.names.trim() || !form.email.trim()) return toast.error('Name and email are required');
     setSaving(true);
     try {
       const created = await userService.invite(form);
@@ -48,7 +52,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           <div className="modal-body">
             <div className="mb-3">
               <label className="form-label small fw-medium">Full Name *</label>
-              <input className="form-control" value={form.name} onChange={f('name')} placeholder="e.g. Chiamaka Eze" autoFocus />
+              <input className="form-control" value={form.names} onChange={f('names')} placeholder="e.g. Chris James" autoFocus />
             </div>
             <div className="mb-3">
               <label className="form-label small fw-medium">Email Address *</label>
@@ -60,9 +64,9 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
             </div>
             <div className="mb-3">
               <label className="form-label small fw-medium">Role</label>
-              <select className="form-select" value={form.role} onChange={f('role')}>
-                {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
-              </select>
+            <select className="form-select" value={form.roles[0]} onChange={handleRoleChange}>
+            {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+          </select>
             </div>
             <div className="alert alert-info small py-2 mb-0">
               <i className="fas fa-info-circle me-2" />An invitation email with a setup link will be sent to the user.

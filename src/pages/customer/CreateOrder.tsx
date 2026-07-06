@@ -1,81 +1,88 @@
+// v2
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SectionHeader } from '@/components/shared/index.tsx';
-import { orderService, subscriptionService, paymentService, PAYSTACK_KEY } from '@/services/api.ts';
 import { formatNGN } from '@/services/mockData.ts';
 import { useAuth } from '@/context/AuthContext.tsx';
 import { useToast } from '@/context/ToastContext.tsx';
 import { useAppData } from '@/context/AppDataContext.tsx';
-import type { Subscription, OrderPriority, PaymentMethod, LaundryOrderCreatePayload } from '@/types/index.ts';
+import type { Subscription, OrderPriority, PaymentMethod, LaundryOrderCreatePayload, Address } from '@/types/index.ts';
+import { orderService, subscriptionService, paymentService, userService } from '@/services/api.ts';
 
 const STEPS = ['Services', 'Garments', 'Schedule', 'Payment', 'Summary'];
 
 const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
 
+const PAYSTACK_CHANNELS = ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'];
+
 interface GarmentSelection { qty: number }
+
 interface OrderForm {
-  services: number[];
-  garments: Record<number, GarmentSelection>;
+  services: string[];
+  garments: Record<string, GarmentSelection>;
   special_instructions: string;
   priority: OrderPriority;
   pickup_date: string;
   pickup_time: string;
-  delivery_area_id: number | null;
+  delivery_area_id: string | null;
   delivery_area: string;
   address: string;
   payment_method: PaymentMethod;
 }
 
-// ─── Paystack inline-first, redirect fallback ─────────────────────────────────
-async function paystackPay({ email, amount, ref, metadata, onSuccess, onCancel, toast }: {
-  email: string; amount: number; ref: string; metadata: Record<string, unknown>;
+// ─── Paystack: backend-initialized, inline-first with redirect fallback ──────
+async function paystackPay({ email, amount, metadata, pendingOrderPayload, onSuccess, onCancel, toast }: {
+  email: string; amount: number; metadata: Record<string, unknown>;
+  pendingOrderPayload: Omit<LaundryOrderCreatePayload, 'payment_reference'>;
   onSuccess: (reference: string) => void; onCancel?: () => void;
   toast: ReturnType<typeof useToast>;
 }): Promise<{ verified: boolean; reference?: string; cancelled?: boolean; redirected?: boolean }> {
-  // 1. Try PaystackPop inline (same page popup)
-  if (window.PaystackPop) {
+  let res;
+  try {
+    res = await paymentService.initialize({
+      email, amount, purpose: 'order', metadata,
+      callback_url: `${window.location.origin}/payment/callback`,
+    });
+  } catch (err) {
+    toast.error('Could not start payment: ' + errMsg(err));
+    return { verified: false };
+  }
+
+  const { reference, access_code, authorization_url } = res;
+
+  const PaystackPop = window.PaystackPop;
+  if (PaystackPop && access_code) {
     return new Promise((resolve) => {
-      const handler = window.PaystackPop!.setup({
-        key: PAYSTACK_KEY,
-        email,
-        amount: amount * 100, // kobo
-        currency: 'NGN',
-        ref,
-        metadata,
-        callback: async (response) => {
+      const popup = new PaystackPop();
+      popup.resumeTransaction(access_code, {
+        onSuccess: async (response) => {
           toast.info('Verifying payment…');
           try {
             await paymentService.verify(response.reference);
             toast.success('Payment confirmed!');
-          } catch {
-            toast.success('Payment received — confirming in background.');
+            onSuccess(response.reference);
+            resolve({ verified: true, reference: response.reference });
+          } catch (err) {
+            toast.error('Payment verification failed — please contact support with reference: ' + response.reference);
+            console.error(err);
+            resolve({ verified: false, reference: response.reference });
           }
-          onSuccess(response.reference);
-          resolve({ verified: true, reference: response.reference });
         },
-        onClose: () => {
+        onCancel: () => {
           onCancel?.();
           resolve({ verified: false, cancelled: true });
         },
       });
-      handler.openIframe();
     });
   }
 
-  // 2. Redirect fallback: initialize via backend, redirect to Paystack
-  toast.info('Opening payment page…');
-  try {
-    const res = await paymentService.initialize({
-      email, amount, reference: ref, purpose: 'order',
-      callback_url: `${window.location.origin}/orders?pay_ref=${ref}`,
-    });
-    if (res?.authorization_url) {
-      sessionStorage.setItem('pending_order', JSON.stringify({ ref, ...metadata }));
-      window.location.href = res.authorization_url;
-      return { verified: false, redirected: true };
-    }
-  } catch (err) {
-    console.warn('Payment initialize failed:', errMsg(err));
+  // Fallback: full redirect. Persist the order payload so the callback
+  // page can complete order creation after the round-trip.
+  if (authorization_url) {
+    sessionStorage.setItem('pending_order', JSON.stringify({ reference, payload: pendingOrderPayload }));
+    toast.info('Redirecting to payment page…');
+    window.location.href = authorization_url;
+    return { verified: false, redirected: true };
   }
 
   toast.error('Could not start payment. Please try again.');
@@ -96,7 +103,34 @@ export default function CreateOrder() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [subAllocations, setSubAlloc] = useState<Record<number, number>>({});
+  const [subAllocations, setSubAlloc] = useState<Record<string, number>>({});
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+
+  // Fetch addresses — if acting on behalf you may want the customer's addresses.
+  // Fallback to current user if no behalf API is available.
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // If you have an endpoint for fetching another user's addresses, use it here:
+        // const addrs = actingOnBehalf && behalfId
+        //   ? await userService.getUserAddresses(behalfId)
+        //   : await userService.myAddresses();
+        const addrs = await userService.myAddresses();
+        setAddresses(addrs);
+        const def = addrs.find(a => a.is_default);
+        if (def && !actingOnBehalf) {
+          setSelectedAddressId(def.id);
+          setForm(p => ({ ...p, address: def.address_line }));
+        }
+      } catch {
+        setAddresses([]);
+      }
+    };
+    load();
+  }, [actingOnBehalf, behalfId, user?.id]);
 
   const [form, setForm] = useState<OrderForm>({
     services: [],
@@ -122,7 +156,7 @@ export default function CreateOrder() {
     Object.entries(form.garments)
       .filter(([, g]) => g.qty > 0)
       .map(([id, g]) => {
-        const base = garmentPricing.find(gp => gp.id === Number(id));
+        const base = garmentPricing.find(gp => gp.id === id);
         return base ? { ...base, qty: g.qty } : null;
       })
       .filter((g): g is NonNullable<typeof g> => g !== null),
@@ -141,11 +175,11 @@ export default function CreateOrder() {
   const deliveryFee = deliveryAreas.find(a => a.id === form.delivery_area_id)?.price || 0;
   const totalAmount = Math.round(garmentTotal + prioritySurcharge + deliveryFee);
 
-  // Multi-plan allocation
+  // Multi-plan allocation — exact match required
   const totalAllocated = Object.values(subAllocations).reduce((s, v) => s + (Number(v) || 0), 0);
-  const allocationOk = totalAllocated >= totalGarmentCount && totalGarmentCount > 0;
+  const allocationOk = totalAllocated === totalGarmentCount && totalGarmentCount > 0;
 
-  const setAllocation = (subId: number, val: string) => {
+  const setAllocation = (subId: string, val: string) => {
     const sub = subscriptions.find(s => s.id === subId);
     const capped = Math.min(Number(val) || 0, sub?.units_remaining || 0);
     setSubAlloc(p => ({ ...p, [subId]: capped }));
@@ -153,7 +187,7 @@ export default function CreateOrder() {
 
   const autoAllocate = () => {
     let rem = totalGarmentCount;
-    const alloc: Record<number, number> = {};
+    const alloc: Record<string, number> = {};
     for (const sub of subscriptions) {
       if (rem <= 0) break;
       const take = Math.min(rem, sub.units_remaining);
@@ -163,13 +197,13 @@ export default function CreateOrder() {
     setSubAlloc(alloc);
   };
 
-  const toggleService = (id: number) =>
+  const toggleService = (id: string) =>
     setForm(p => ({
       ...p,
       services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
     }));
 
-  const setGarmentQty = (id: number, delta: number) =>
+  const setGarmentQty = (id: string, delta: number) =>
     setForm(p => ({
       ...p,
       garments: {
@@ -189,23 +223,7 @@ export default function CreateOrder() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const ref = `ST-ORD-${Date.now()}`;
-      let paymentRef: string | undefined;
-
-      if (form.payment_method === 'direct' && totalAmount > 0) {
-        const result = await paystackPay({
-          email: user?.email || 'customer@stitch.ng',
-          amount: totalAmount,
-          ref,
-          metadata: { order_type: 'laundry', behalf_user_id: behalfId || null },
-          toast,
-          onSuccess: (reference) => { paymentRef = reference; },
-          onCancel: () => toast.info('Payment cancelled. Order not placed.'),
-        });
-        if (result.cancelled || result.redirected || !result.verified) { setSubmitting(false); return; }
-      }
-
-      const payload: LaundryOrderCreatePayload = {
+      const basePayload: Omit<LaundryOrderCreatePayload, 'payment_reference'> = {
         services: form.services.map(sid => {
           const svc = laundryServices.find(s => s.id === sid)!;
           return { id: svc.id, name: svc.name, price_multiplier: svc.price_multiplier };
@@ -222,9 +240,8 @@ export default function CreateOrder() {
         special_instructions: form.special_instructions || undefined,
         payment_method: form.payment_method,
         sub_allocations: form.payment_method === 'subscription'
-          ? Object.entries(subAllocations).filter(([, v]) => v > 0).map(([subId, units]) => ({ subscription_id: Number(subId), units }))
+          ? Object.entries(subAllocations).filter(([, v]) => v > 0).map(([subId, units]) => ({ subscription_id: subId, units }))
           : undefined,
-        payment_reference: paymentRef,
         garment_subtotal: garmentTotal,
         priority_surcharge: prioritySurcharge,
         delivery_fee: deliveryFee,
@@ -232,7 +249,39 @@ export default function CreateOrder() {
         behalf_user_id: actingOnBehalf ? behalfId : undefined,
       };
 
-      await orderService.create(payload);
+      let paymentRef: string | undefined;
+
+      if (form.payment_method === 'direct' && totalAmount > 0) {
+        const result = await paystackPay({
+          email: user?.email || 'customer@stitch.ng',
+          amount: totalAmount,
+          metadata: { order_type: 'laundry', behalf_user_id: behalfId || null },
+          pendingOrderPayload: basePayload,
+          toast,
+          onSuccess: (reference) => { paymentRef = reference; },
+          onCancel: () => toast.info('Payment cancelled. Order not placed.'),
+        });
+        if (result.cancelled || result.redirected || !result.verified) {
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      if (selectedAddressId === 'new' && saveNewAddress && form.address.trim()) {
+        try {
+          await userService.createAddress({
+            label: 'Delivery Address',
+            address_line: form.address.trim(),
+            area: null,
+            is_default: addresses.length === 0,
+          });
+        } catch (err) {
+          console.warn('Could not save address:', errMsg(err));
+          // non-fatal — proceed with order creation regardless
+        }
+      }
+
+      await orderService.create({ ...basePayload, payment_reference: paymentRef });
       toast.success(actingOnBehalf
         ? `Order created for ${behalfName}!`
         : 'Order placed! We will confirm your pickup shortly.');
@@ -367,7 +416,7 @@ export default function CreateOrder() {
             <label className="form-label small fw-medium">Delivery Area *</label>
             <select className="form-select" value={form.delivery_area_id ?? ''}
               onChange={e => {
-                const area = deliveryAreas.find(a => a.id === Number(e.target.value));
+                const area = deliveryAreas.find(a => a.id === e.target.value);
                 setForm(p => ({ ...p, delivery_area_id: area ? area.id : null, delivery_area: area?.name || '' }));
               }}>
               <option value="">Select your area…</option>
@@ -376,11 +425,58 @@ export default function CreateOrder() {
               ))}
             </select>
           </div>
+
           <div className="col-12">
-            <label className="form-label small fw-medium">Full Address *</label>
-            <input className="form-control" placeholder="House number, street, landmark…"
-              value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            <label className="form-label small fw-medium">Delivery Address *</label>
+
+            {addresses.length > 0 && (
+              <select
+                className="form-select mb-2"
+                value={selectedAddressId}
+                onChange={e => {
+                  const val = e.target.value;
+                  setSelectedAddressId(val);
+                  if (val === 'new') {
+                    setForm(p => ({ ...p, address: '' }));
+                  } else {
+                    const addr = addresses.find(a => a.id === val);
+                    if (addr) setForm(p => ({ ...p, address: addr.address_line }));
+                  }
+                }}
+              >
+                {addresses.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.label} — {a.address_line}{a.is_default ? ' (default)' : ''}
+                  </option>
+                ))}
+                <option value="new">+ Use a new address</option>
+              </select>
+            )}
+
+            {(selectedAddressId === 'new' || addresses.length === 0) && (
+              <>
+                <input
+                  className="form-control"
+                  placeholder="House number, street, landmark…"
+                  value={form.address}
+                  onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                />
+                <div className="form-check mt-2">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="save-address"
+                    checked={saveNewAddress}
+                    onChange={e => setSaveNewAddress(e.target.checked)}
+                  />
+                  <label className="form-check-label small" htmlFor="save-address">
+                    Save this address for future orders
+                  </label>
+                </div>
+              </>
+            )}
           </div>
+
         </div>
       </div>
     </div>
@@ -402,7 +498,9 @@ export default function CreateOrder() {
             </div>
             <div>
               <div className="fw-semibold mb-1"><i className="fas fa-credit-card text-primary me-2" />Pay with Paystack</div>
-              <div className="text-muted small">Card, bank transfer or USSD. A secure payment popup appears on confirmation.</div>
+              <div className="text-muted small">
+                Card, bank transfer, USSD, or Opay/wallet transfer. A secure payment popup appears on confirmation.
+              </div>
               <div className="fw-bold text-primary mt-1">{formatNGN(totalAmount)}</div>
             </div>
           </div>
@@ -469,7 +567,7 @@ export default function CreateOrder() {
   const renderStep4 = () => {
     const planNames = Object.entries(subAllocations)
       .filter(([, v]) => v > 0)
-      .map(([id, v]) => { const s = subscriptions.find(x => x.id === Number(id)); return s ? `${s.plan_name}: ${v}u` : null; })
+      .map(([id, v]) => { const s = subscriptions.find(x => x.id === id); return s ? `${s.plan_name}: ${v}u` : null; })
       .filter(Boolean).join(' + ');
     return (
       <div>
@@ -535,7 +633,7 @@ export default function CreateOrder() {
           <i className="fas fa-info-circle me-2" />
           {form.payment_method === 'subscription'
             ? `${totalGarmentCount} units will be deducted from your subscription(s) when the order is confirmed.`
-            : 'A Paystack payment popup will appear. Complete payment to confirm your order.'}
+            : 'A Paystack payment popup will appear — pay by card, bank transfer, USSD, or Opay/wallet transfer to confirm your order.'}
         </div>
       </div>
     );
@@ -586,3 +684,4 @@ export default function CreateOrder() {
     </div>
   );
 }
+
