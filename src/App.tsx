@@ -181,8 +181,9 @@ const MyOrders          = lazy(() => import('./pages/customer/MyOrders.tsx'));
 const CreateOrder       = lazy(() => import('./pages/customer/CreateOrder.tsx'));
 const FashionRequest    = lazy(() => import('./pages/customer/FashionRequest.tsx'));
 const Payments          = lazy(() => import('./pages/customer/Payments.tsx'));
-const Profile           = lazy(() => import('./pages/customer/Profile.tsx'));
 const PaymentCallback   = lazy(() => import('./pages/payments/PaymentCallback.tsx'));
+const PayoutSettings   = lazy(() => import('./pages/payments/PayoutSettings.tsx'));
+const Profile           = lazy(() => import('./pages/customer/Profile.tsx'));
 const Subscriptions     = lazy(() => import('./pages/customer/Subscriptions.tsx'));
 const OpsDashboard      = lazy(() => import('./pages/operations/OpsDashboard.tsx'));
 const LaundryOrders     = lazy(() => import('./pages/operations/LaundryOrders.tsx'));
@@ -288,12 +289,14 @@ function AppRoutes() {
       <Route path="/admin/plans"   element={P(AdminPlans)} />
       <Route path="/admin/pricing" element={P(PricingSettings)} />
       <Route path="/admin/usage"   element={P(UsageRecording)} />
+      <Route path="/admin/payout-settings"   element={P(PayoutSettings)} />
 
       {/* CRM / Inventory / Billing / Analytics */}
       <Route path="/crm"       element={P(CRM)} />
       <Route path="/inventory" element={P(Inventory)} />
       <Route path="/billing"   element={P(Billing)} />
       <Route path="/analytics" element={P(Analytics)} />
+      <Route path="/payout-settings"   element={P(PayoutSettings)} />
 
       {/* Staff / Driver */}
       <Route path="/staff"             element={P(StaffPortal)} />

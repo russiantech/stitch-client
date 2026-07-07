@@ -37,7 +37,7 @@ let _cachedApiUrl: string | null = null;
 const getApiUrl = (): string => {
 
   if (_cachedApiUrl) return _cachedApiUrl;
-  
+
   _cachedApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
   return _cachedApiUrl;
 
@@ -282,6 +282,20 @@ export const subscriptionService = {
   pause: (id: number) => unwrap<Subscription>(`/subscriptions/${id}/pause`, { method: 'POST' }),
   resume: (id: number) => unwrap<Subscription>(`/subscriptions/${id}/resume`, { method: 'POST' }),
   manageLink: (id: number) => unwrap<{ link: string }>(`/subscriptions/${id}/manage-link`),
+};
+
+// ─── Payout Service ──────────────────────
+export const payoutService = {
+  banks: (provider = 'opay') => unwrap<Array<{ name: string; code: string }>>(`/payouts/banks?provider=${provider}`),
+  resolveAccount: (data: { provider: string; account_number: string; bank_code: string }) =>
+    unwrap<{ account_name: string; account_number: string }>('/payouts/resolve-account', { method: 'POST', json: data }),
+  setup: (data: { provider: string; account_number: string; bank_code: string; platform_fee_percent: number }) =>
+    unwrap<{ provider: string; account_name: string; account_number: string }>('/payouts/setup', { method: 'POST', json: data }),
+  status: () => unwrap<{
+    configured: boolean; provider: string; account_name: string | null;
+    account_number: string | null; bank_code: string | null;
+    platform_fee_percent: number; settlement_schedule: string;
+  }>('/payouts/status'),
 };
 
 // ─── USAGE (customer_subscriptions router — NOT doubled) ──────────────────────

@@ -41,7 +41,7 @@ export default function CustomerDashboard() {
         <p className="text-muted mb-0 small">Here's an overview of your laundry & fashion services.</p>
       </div>
 
-      <div className="row g-3 mb-4">
+      {/* <div className="row g-3 mb-4">
         {[
           { to: '/orders/new', icon: 'fa-soap', title: 'Laundry Order', sub: 'Schedule pickup', color: 'primary' },
           { to: '/fashion/new', icon: 'fa-shirt', title: 'Fashion Request', sub: 'Tailoring & sewing', color: 'warning' },
@@ -62,7 +62,43 @@ export default function CustomerDashboard() {
             </Link>
           </div>
         ))}
-      </div>
+      </div> */}
+
+      <div className="row g-2 g-md-3 mb-4">
+  {[
+    { to: '/orders/new', icon: 'fa-soap', title: 'Laundry', sub: 'Schedule pickup', color: 'primary' },
+    { to: '/fashion/new', icon: 'fa-shirt', title: 'Fashion', sub: 'Tailoring', color: 'warning' },
+    { to: '/subscriptions', icon: 'fa-layer-group', title: 'Subscribe', sub: 'Volume plans', color: 'success' },
+    { to: '/orders', icon: 'fa-box', title: 'Track', sub: 'View orders', color: 'info' },
+  ].map(a => (
+    <div key={a.to} className="col-6 col-lg-3">
+      <Link to={a.to} className="text-decoration-none">
+        <div className="stat-card d-flex align-items-center gap-2 gap-md-3 h-100 p-2 p-md-3">
+          <div
+            className={`stat-icon bg-${a.color} bg-opacity-10 flex-shrink-0 d-flex align-items-center justify-content-center rounded-2`}
+            style={{ width: 'clamp(32px, 9vw, 44px)', height: 'clamp(32px, 9vw, 44px)' }}
+          >
+            <i className={`fas ${a.icon} text-${a.color}`} style={{ fontSize: 'clamp(0.7rem, 2.2vw, 1rem)' }} />
+          </div>
+          <div className="min-w-0 overflow-hidden">
+            <div
+              className="fw-medium text-truncate"
+              style={{ fontSize: 'clamp(11px, 3vw, 14px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {a.title}
+            </div>
+            <div
+              className="text-muted text-truncate"
+              style={{ fontSize: 'clamp(9px, 2.5vw, 11px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {a.sub}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </div>
+  ))}
+</div>
 
       <div className="row g-3 mb-4">
         <div className="col-md-4">
@@ -75,7 +111,7 @@ export default function CustomerDashboard() {
           <StatCard label="Loyalty Points" value={(user?.loyalty_points ?? 0).toLocaleString()}
             icon="fa-star" iconBg="bg-warning" change="Redeemable for discounts" changeType="positive" />
         </div>
-        
+
         <div className="col-md-4">
           <StatCard label="Active Orders" value={recentOrders.filter(o => o.status !== 'Completed').length}
             icon="fa-box" iconBg="bg-success" />
