@@ -73,14 +73,14 @@ export default function CustomerDashboard() {
   ].map(a => (
     <div key={a.to} className="col-6 col-lg-3">
       <Link to={a.to} className="text-decoration-none">
-        <div className="stat-card d-flex align-items-center gap-2 gap-md-3 h-100 p-2 p-md-3">
+        <div className="stat-card d-flex flex-column flex-sm-row align-items-center align-items-sm-start text-center text-sm-start gap-2 gap-sm-3 h-100 p-2 p-md-3">
           <div
             className={`stat-icon bg-${a.color} bg-opacity-10 flex-shrink-0 d-flex align-items-center justify-content-center rounded-2`}
-            style={{ width: 'clamp(32px, 9vw, 44px)', height: 'clamp(32px, 9vw, 44px)' }}
+            style={{ width: 'clamp(36px, 9vw, 44px)', height: 'clamp(36px, 9vw, 44px)' }}
           >
-            <i className={`fas ${a.icon} text-${a.color}`} style={{ fontSize: 'clamp(0.7rem, 2.2vw, 1rem)' }} />
+            <i className={`fas ${a.icon} text-${a.color}`} style={{ fontSize: 'clamp(0.8rem, 2.2vw, 1rem)' }} />
           </div>
-          <div className="min-w-0 overflow-hidden">
+          <div className="min-w-0 overflow-hidden w-100">
             <div
               className="fw-medium text-truncate"
               style={{ fontSize: 'clamp(11px, 3vw, 14px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
