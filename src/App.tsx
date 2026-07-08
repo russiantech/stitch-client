@@ -173,18 +173,28 @@ import AppShell from './components/layout/AppShell.tsx';
 
 
 // ─── Lazy-loaded pages ────────────────────────────────────────────────────────
+
+// Auth
 const SignIn            = lazy(() => import('./pages/auth/SignIn.tsx'));
 const SignUp            = lazy(() => import('./pages/auth/SignUp.tsx'));
 const ForgotPassword    = lazy(() => import('./pages/auth/ForgotPassword.tsx'));
+
+// Customers
 const CustomerDashboard = lazy(() => import('./pages/customer/Dashboard.tsx'));
 const MyOrders          = lazy(() => import('./pages/customer/MyOrders.tsx'));
 const CreateOrder       = lazy(() => import('./pages/customer/CreateOrder.tsx'));
 const FashionRequest    = lazy(() => import('./pages/customer/FashionRequest.tsx'));
 const Payments          = lazy(() => import('./pages/customer/Payments.tsx'));
 const PaymentCallback   = lazy(() => import('./pages/payments/PaymentCallback.tsx'));
-const PayoutSettings   = lazy(() => import('./pages/payments/PayoutSettings.tsx'));
 const Profile           = lazy(() => import('./pages/customer/Profile.tsx'));
 const Subscriptions     = lazy(() => import('./pages/customer/Subscriptions.tsx'));
+
+// Organization
+const PayoutSettings   = lazy(() => import('./pages/org/PayoutSettings.tsx'));
+const AcceptInvite     = lazy(() => import('./pages/org/AcceptInvite.tsx'));
+const Settings     = lazy(() => import('./pages/org/Settings.tsx'));
+
+// Operations
 const OpsDashboard      = lazy(() => import('./pages/operations/OpsDashboard.tsx'));
 const LaundryOrders     = lazy(() => import('./pages/operations/LaundryOrders.tsx'));
 const FashionOrders     = lazy(() => import('./pages/operations/FashionOrders.tsx'));
@@ -274,6 +284,11 @@ function AppRoutes() {
       <Route path="/payment/callback" element={P(PaymentCallback)} />
       <Route path="/subscriptions" element={P(Subscriptions)} />
 
+      {/* Organization */}
+      <Route path="/orgs/accept-invite" element={P(AcceptInvite)} />
+      <Route path="/orgs/payouts"   element={P(PayoutSettings)} />
+      <Route path="/orgs/settings"   element={P(Settings)} />
+
       {/* Operations */}
       <Route path="/ops"            element={P(OpsDashboard)} />
       <Route path="/ops/laundry"    element={P(LaundryOrders)} />
@@ -289,14 +304,12 @@ function AppRoutes() {
       <Route path="/admin/plans"   element={P(AdminPlans)} />
       <Route path="/admin/pricing" element={P(PricingSettings)} />
       <Route path="/admin/usage"   element={P(UsageRecording)} />
-      <Route path="/admin/payout-settings"   element={P(PayoutSettings)} />
 
       {/* CRM / Inventory / Billing / Analytics */}
       <Route path="/crm"       element={P(CRM)} />
       <Route path="/inventory" element={P(Inventory)} />
       <Route path="/billing"   element={P(Billing)} />
       <Route path="/analytics" element={P(Analytics)} />
-      <Route path="/payout-settings"   element={P(PayoutSettings)} />
 
       {/* Staff / Driver */}
       <Route path="/staff"             element={P(StaffPortal)} />

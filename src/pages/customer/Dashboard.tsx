@@ -70,6 +70,7 @@ export default function CustomerDashboard() {
     { to: '/fashion/new', icon: 'fa-shirt', title: 'Fashion', sub: 'Tailoring', color: 'warning' },
     { to: '/subscriptions', icon: 'fa-layer-group', title: 'Subscribe', sub: 'Volume plans', color: 'success' },
     { to: '/orders', icon: 'fa-box', title: 'Track', sub: 'View orders', color: 'info' },
+    
   ].map(a => (
     <div key={a.to} className="col-6 col-lg-3">
       <Link to={a.to} className="text-decoration-none">

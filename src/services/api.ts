@@ -207,17 +207,22 @@ export const authService = {
     unwrap<{ public_signup: string; allow_public_signup: boolean }>(
       '/auth/config/signup-toggle', { method: 'POST', json: { allow_public_signup } },
     ),
+
+  acceptInvite: (token: string, new_password: string) =>
+    unwrap<{ public_signup: string; allow_public_signup: boolean }>(
+      '/auth/accept-invite', { method: 'POST', json: { token, new_password } },
+    ),
+
 };
 
 // ─── ORGANIZATIONS ──────────────────────────────────────────────────────────
 export const orgService = {
   get: () => unwrap<Organization>('/organizations/me'),
-  resetInviteCode: () =>
-    unwrap<{ invite_code: string; invite_link: string }>('/organizations/me/invite-code/reset', { method: 'POST' }),
-  getInviteLink: () =>
-    unwrap<{ invite_code: string; invite_link: string; allow_public_signup: boolean }>('/organizations/me/invite-link'),
-  togglePublicSignup: (allow_public_signup: boolean) =>
-    unwrap<{ allow_public_signup: boolean }>('/organizations/me/public-signup', { method: 'PATCH', json: { allow_public_signup } }),
+  resetInviteCode: () => unwrap<{ invite_code: string; invite_link: string }>('/organizations/me/invite-code/reset', { method: 'POST' }),
+  getInviteLink: () => unwrap<{ invite_code: string; invite_link: string; allow_public_signup: boolean }>('/organizations/me/invite-link'),
+  togglePublicSignup: (allow_public_signup: boolean) => unwrap<{ allow_public_signup: boolean }>('/organizations/me/public-signup', { method: 'PATCH', json: { allow_public_signup } }),
+  lookupByCode: (code: string) => unwrap<{ name: string; invite_code: string }>(`/organizations/lookup/${code}`),
+
 };
 
 // ─── USERS ──────────────────────────────────────────────────────────────────

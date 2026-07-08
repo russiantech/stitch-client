@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { authService } from '@/services/api.ts';
+import { authService, orgService } from '@/services/api.ts';
 import type { SignupPayload } from '@/services/api.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import PasswordInput from '@/components/shared/PasswordInput.tsx';
@@ -51,6 +51,11 @@ export default function SignUp() {
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 
+  const [orgName, setOrgName] = useState<string | null>(null);
+  const [orgLookupError, setOrgLookupError] = useState<string | null>(null);
+  const [orgLookupLoading, setOrgLookupLoading] = useState(false);
+
 
   const update = (field: keyof SignUpForm) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -77,6 +82,17 @@ export default function SignUp() {
       });
     }, 1000);
   };
+
+  // Organization Name Lookup
+  useEffect(() => {
+    if (mode !== 'join_org' || !orgCode) return;
+    setOrgLookupLoading(true);
+    orgService.lookupByCode(orgCode)
+      .then(res => setOrgName(res.name))
+      .catch(err => setOrgLookupError(errMsg(err)))
+      .finally(() => setOrgLookupLoading(false));
+  }, [mode, orgCode]);
+
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
@@ -126,7 +142,7 @@ export default function SignUp() {
         email_code: verificationCode,
       });
 
-      if (response.user && !response.user.is_active) {
+      if (response.user && (response.user as any).status !== 'active') {
         toast.success('Account created! An administrator must activate it before you can sign in.');
         navigate('/signin');
       } else if (response.access_token && response.refresh_token) {
@@ -178,7 +194,7 @@ export default function SignUp() {
   );
 
   // ── Org context badge (shown when joining via invite) ─────────────────────
-  const OrgBadge = () => {
+/*   const OrgBadge = () => {
     if (mode === 'new_org') return null;
     return (
       <div className="alert alert-primary py-2 px-3 mb-4 d-flex align-items-center gap-2 small">
@@ -189,6 +205,42 @@ export default function SignUp() {
       </div>
     );
   };
+ */
+
+  const OrgBadge = () => {
+  if (mode === 'new_org') return null;
+
+  if (mode === 'join_org') {
+    if (orgLookupLoading) {
+      return (
+        <div className="alert alert-light border py-2 px-3 mb-4 small text-muted">
+          <span className="spinner-border spinner-border-sm me-2" />Looking up organization…
+        </div>
+      );
+    }
+    if (orgLookupError) {
+      return (
+        <div className="alert alert-danger py-2 px-3 mb-4 small">
+          <i className="fas fa-exclamation-triangle me-2" />
+          Invalid or expired invite code (<strong>{orgCode}</strong>). Please check the link with whoever invited you.
+        </div>
+      );
+    }
+    return (
+      <div className="alert alert-primary py-2 px-3 mb-4 d-flex align-items-center gap-2 small">
+        <i className="fas fa-building" />
+        <span>Joining <strong>{orgName}</strong></span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="alert alert-primary py-2 px-3 mb-4 d-flex align-items-center gap-2 small">
+      <i className="fas fa-building" />
+      <span>Accepting invitation</span>
+    </div>
+  );
+};
 
   // ── Verify step ───────────────────────────────────────────────────────────
   if (step === 'verify') {
@@ -316,7 +368,8 @@ export default function SignUp() {
           </div>
         </div>
 
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+          {/* <button type="submit" className="btn btn-primary w-100" disabled={loading}> */}
+          <button type="submit" className="btn btn-primary w-100" disabled={loading || (mode === 'join_org' && !!orgLookupError)}>
             {loading
               ? <><span className="spinner-border spinner-border-sm me-2" />Creating account…</>
               : mode === 'new_org' ? 'Create Organization & Account' : 'Create Account'}

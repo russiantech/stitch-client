@@ -163,19 +163,22 @@ const NAV: Record<string, NavItem[]> = {
     { to:'/inventory',     icon:'fa-boxes-stacked', label:'Inventory' },
     { to:'/billing',       icon:'fa-file-invoice',  label:'Billing' },
     { to:'/analytics',     icon:'fa-chart-line',    label:'Analytics' },
-    { to:'/payout-settings',     icon:'fa-chart-line',    label:'Payout Settings' },
 
     { label:'Admin', section:true },
     { to:'/admin/users',   icon:'fa-user-shield',   label:'Users' },
     { to:'/admin/plans',   icon:'fa-layer-group',   label:'Plans' },
     { to:'/admin/pricing', icon:'fa-tags',          label:'Pricing Settings' },
     { to:'/admin/usage',   icon:'fa-chart-bar',     label:'Usage Recording' },
-    // { to:'/admin/payout-settings',   icon:'fa-dolloar',     label:'Payout Settings' },
+
+    { label:'My Organization', section:true },
+    { to:'/orgs/settings',     icon:'fa-building',          label:'Org Settings' },
+    { to:'/orgs/payouts',     icon:'fa-money-check-dollar',    label:'Payout Settings' },
 
     { label:'My Account', section:true },
     { to:'/dashboard',     icon:'fa-home',          label:'Dashboard' },
     { to:'/subscriptions', icon:'fa-layer-group',   label:'Subscriptions' },
   ],
+
   staff: [
     { to:'/staff',        icon:'fa-gauge',       label:'My Tasks' },
     { to:'/ops/laundry',  icon:'fa-soap',        label:'Laundry Queue' },
