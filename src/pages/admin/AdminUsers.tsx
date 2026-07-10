@@ -85,11 +85,42 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
 }
 
 // ─── Edit User Modal (profile fields + roles + active status) ────────────────
+// function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () => void; onSaved: (u: User) => void }) {
+//   const toast = useToast();
+//   const [names, setNames] = useState(u.names);
+//   const [phone, setPhone] = useState(u.phone || '');
+//   const [isActive, setIsActive] = useState(u.is_active);
+//   const [roles, setRoles] = useState<UserRole[]>(u.roles);
+//   const [saving, setSaving] = useState(false);
+
+//   const toggleRole = (role: UserRole) =>
+//     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+
+//   const handleSave = async () => {
+//     setSaving(true);
+//     try {
+//       let updated = await userService.update(u.id, { names, phone, is_active: isActive });
+//       const toAdd = roles.filter(r => !u.roles.includes(r));
+//       const toRemove = u.roles.filter(r => !roles.includes(r));
+//       for (const r of toAdd) updated = await userService.assignRole(u.id, r);
+//       for (const r of toRemove) updated = await userService.removeRole(u.id, r);
+//       toast.success('User updated');
+//       onSaved(updated);
+//       onClose();
+//     } catch (err) {
+//       toast.error(errMsg(err));
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   return (
+
 function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () => void; onSaved: (u: User) => void }) {
   const toast = useToast();
   const [names, setNames] = useState(u.names);
   const [phone, setPhone] = useState(u.phone || '');
-  const [isActive, setIsActive] = useState(u.is_active);
+  const [status, setStatus] = useState<User['status']>(u.status);
   const [roles, setRoles] = useState<UserRole[]>(u.roles);
   const [saving, setSaving] = useState(false);
 
@@ -99,7 +130,7 @@ function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () 
   const handleSave = async () => {
     setSaving(true);
     try {
-      let updated = await userService.update(u.id, { names, phone, is_active: isActive });
+      let updated = await userService.update(u.id, { names, phone, status });
       const toAdd = roles.filter(r => !u.roles.includes(r));
       const toRemove = u.roles.filter(r => !roles.includes(r));
       for (const r of toAdd) updated = await userService.assignRole(u.id, r);
@@ -115,6 +146,7 @@ function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () 
   };
 
   return (
+
     <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.45)' }}>
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
@@ -149,9 +181,8 @@ function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () 
                 </div>
               </div>
               <div className="col-12">
-                <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" id="user-active"
-                    checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+                <div className="form-check form-switch"> 
+                  <input className="form-check-input" type="checkbox" id="user-active" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
                   <label className="form-check-label small" htmlFor="user-active">Account Active</label>
                 </div>
               </div>
@@ -251,7 +282,8 @@ function UserDrawer({ u, onClose, onEdit, onImpersonate, onDelete, onCreateOrder
             { icon: 'fa-envelope', label: 'Email', value: u.email },
             { icon: 'fa-phone', label: 'Phone', value: u.phone || '—' },
             { icon: 'fa-calendar', label: 'Joined', value: new Date(u.created_at).toLocaleDateString('en-NG') },
-            { icon: 'fa-circle-check', label: 'Status', value: u.is_active ? 'Active' : 'Inactive' },
+            // { icon: 'fa-circle-check', label: 'Status', value: u.is_active ? 'Active' : 'Inactive' },
+            { icon: 'fa-circle-check', label: 'Status', value: u.status === 'active' ? 'Active' : u.status === 'pending' ? 'Pending' : u.status === 'suspended' ? 'Suspended' : 'Inactive' },
           ].map(i => (
             <div key={i.label} className="d-flex gap-3 mb-3">
               <i className={`fas ${i.icon} text-muted mt-1`} style={{ width: 16, fontSize: 13 }} />
@@ -355,13 +387,13 @@ export default function AdminUsers() {
         title="User Management"
         subtitle="Manage platform users, roles, access and act on their behalf"
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => setModal('invite')}>
+          <button data-tour="tour-users-invite" className="btn btn-primary btn-sm" onClick={() => setModal('invite')}>
             <i className="fas fa-user-plus me-2" />Invite User
           </button>
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-users-stats">
         {[
           { label: 'Total Users', value: users.length, color: 'primary', icon: 'fa-users' },
           { label: 'Customers', value: users.filter(u => u.roles.includes('customer')).length, color: 'success', icon: 'fa-user' },
@@ -431,8 +463,8 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td>
-                      <span className={`badge ${u.is_active ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
-                        {u.is_active ? 'Active' : 'Inactive'}
+                     <span className={`badge ${u.status === 'active' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
+                        {u.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="small text-muted">{new Date(u.created_at).toLocaleDateString('en-NG')}</td>

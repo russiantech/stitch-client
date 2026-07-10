@@ -19,11 +19,11 @@ interface FieldDef<T> {
   placeholder?: string;
   default?: unknown;
 }
-interface WithId { id: number }
+interface WithId { id: string }
 
 // ─── Editable table row ────────────────────────────────────────────────────────
 function EditableRow<T extends WithId>({ item, fields, onSave, onDelete }: {
-  item: T; fields: FieldDef<T>[]; onSave: (updated: T) => void; onDelete: (id: number) => void;
+  item: T; fields: FieldDef<T>[]; onSave: (updated: T) => void; onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<T>({ ...item });
@@ -152,8 +152,8 @@ function AddRowForm<T extends WithId>({ fields, onAdd, onCancel }: {
 function PricingTable<T extends WithId>({ title, items, setItems, fields, createFn, updateFn, deleteFn }: {
   title: string; items: T[]; setItems: React.Dispatch<React.SetStateAction<T[]>>; fields: FieldDef<T>[];
   createFn: (data: Partial<T>) => Promise<T>;
-  updateFn: (id: number, data: Partial<T>) => Promise<T>;
-  deleteFn: (id: number) => Promise<unknown>;
+  updateFn: (id: string, data: Partial<T>) => Promise<T>;
+  deleteFn: (id: string) => Promise<unknown>;
 }) {
   const toast = useToast();
   const { loadPricing } = useAppData();
@@ -182,7 +182,7 @@ function PricingTable<T extends WithId>({ title, items, setItems, fields, create
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this item?')) return;
     try {
       await deleteFn(id);
@@ -280,7 +280,7 @@ export default function PricingSettings() {
         Changes here update pricing visible to customers when they create orders. Click the edit icon on any row to modify, then tick to save.
       </div>
 
-      <ul className="nav nav-tabs mb-4">
+      <ul className="nav nav-tabs mb-4" data-tour="tour-pricing-tabs">
         {[
           { key: 'garments' as const, label: 'Garment Pricing', icon: 'fa-shirt' },
           { key: 'services' as const, label: 'Laundry Services', icon: 'fa-soap' },

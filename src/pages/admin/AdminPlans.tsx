@@ -111,7 +111,7 @@ export default function AdminPlans() {
     else setPlans(p => [...p, saved]);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this plan? Active subscriptions will not be affected.')) return;
     try {
       await planService.delete(id);
@@ -134,7 +134,7 @@ export default function AdminPlans() {
         }
       />
 
-      <div className="row g-4 mb-4">
+      <div className="row g-4 mb-4" data-tour="tour-plans-cards">
         {plans.map(plan => (
           <div key={plan.id} className="col-md-4">
             <div className={`bg-white rounded-3 border p-4 h-100 d-flex flex-column ${plan.is_popular ? 'border-primary border-2' : ''}`}>

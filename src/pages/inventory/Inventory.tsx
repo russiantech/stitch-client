@@ -78,7 +78,7 @@ export default function Inventory() {
     }
   };
 
-  const deleteItem = async (id: number) => {
+  const deleteItem = async (id: string) => {
     if (!window.confirm('Remove this item?')) return;
     try {
       await inventoryService.delete(id);
@@ -89,7 +89,7 @@ export default function Inventory() {
     }
   };
 
-  const adjustQty = async (id: number, delta: number) => {
+  const adjustQty = async (id: string, delta: number) => {
     try {
       const updated = await inventoryService.adjust(id, {
         action: delta > 0 ? 'restock' : 'deduct',
@@ -118,7 +118,7 @@ export default function Inventory() {
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-inventory-stats">
         <div className="col-6 col-lg-3">
           <div className="stat-card">
             <div className="stat-label">Total Items</div>
@@ -146,7 +146,7 @@ export default function Inventory() {
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="alert alert-warning d-flex align-items-start gap-3 mb-4">
+        <div className="alert alert-warning d-flex align-items-start gap-3 mb-4" data-tour="tour-inventory-alert">
           <i className="fas fa-exclamation-triangle mt-1" />
           <div>
             <div className="fw-semibold small mb-1">Low Stock Alert — {lowStockItems.length} item(s) need restocking</div>

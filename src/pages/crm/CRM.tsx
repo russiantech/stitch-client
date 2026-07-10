@@ -40,8 +40,14 @@ export default function CRM() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = customers.filter(c => {
+  /* const filtered = customers.filter(c => {
     const matchStatus = !statusFilter || (statusFilter === 'Active' ? c.is_active : !c.is_active);
+    return matchStatus;
+  }); */
+
+  // filter logic
+  const filtered = customers.filter(c => {
+    const matchStatus = !statusFilter || (statusFilter === 'Active' ? c.status === 'active' : c.status !== 'active');
     return matchStatus;
   });
 
@@ -77,11 +83,16 @@ export default function CRM() {
         subtitle="Customer profiles, order history and personal notes"
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-crm-stats">
         {[
           { label: 'Total Customers', value: customers.length, icon: 'fa-users', color: 'primary' },
-          { label: 'Active', value: customers.filter(c => c.is_active).length, icon: 'fa-user-check', color: 'success' },
-          { label: 'Inactive', value: customers.filter(c => !c.is_active).length, icon: 'fa-user-slash', color: 'secondary' },
+          // { label: 'Active', value: customers.filter(c => c.is_active).length, icon: 'fa-user-check', color: 'success' },
+          // { label: 'Inactive', value: customers.filter(c => !c.is_active).length, icon: 'fa-user-slash', color: 'secondary' },
+
+          // stat cards
+          { label: 'Active', value: customers.filter(c => c.status === 'active').length, icon: 'fa-user-check', color: 'success' },
+          { label: 'Inactive', value: customers.filter(c => c.status !== 'active').length, icon: 'fa-user-slash', color: 'secondary' },
+
           { label: 'New (30d)', value: customers.filter(c => Date.now() - new Date(c.created_at).getTime() < 30 * 86400000).length, icon: 'fa-user-plus', color: 'info' },
         ].map(s => (
           <div key={s.label} className="col-6 col-lg-3">
@@ -124,7 +135,7 @@ export default function CRM() {
         <span className="ms-auto text-muted small">{filtered.length} customers</span>
       </div>
 
-      <div className="bg-white rounded-3 border overflow-hidden">
+      <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-crm-table">
         {loading ? <LoadingSpinner /> : (
           <div className="table-responsive">
             <table className="table mb-0">
@@ -156,9 +167,9 @@ export default function CRM() {
                     </td>
                     <td className="small text-muted">{c.phone || '—'}</td>
                     <td>
-                      <span className={`badge ${c.is_active ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 10 }}>
-                        {c.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                  <span className={`badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 10 }}>
+                    {c.status === 'active' ? 'Active' : 'Inactive'}
+                  </span>
                     </td>
                     <td className="small text-muted">{new Date(c.created_at).toLocaleDateString('en-NG')}</td>
                     <td className="pe-4" onClick={e => e.stopPropagation()}>

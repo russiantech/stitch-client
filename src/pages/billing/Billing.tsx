@@ -240,13 +240,13 @@ export default function Billing() {
         title="Billing & Payments"
         subtitle="Generate invoices, verify payments and track revenue"
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => setModal('generate')}>
+        <button data-tour="tour-billing-generate" className="btn btn-primary btn-sm" onClick={() => setModal('generate')}>
             <i className="fas fa-file-invoice me-2" />Generate Invoice
           </button>
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-billing-stats">
         {[
           { label: 'Total Payments', value: payments.length, color: 'primary' },
           { label: 'Collected', value: formatNGN(totalCollected), color: 'success' },

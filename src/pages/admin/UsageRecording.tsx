@@ -84,14 +84,23 @@ export default function UsageRecording() {
 
     setSaving(true);
     try {
-      const entry = await usageService.record({
+      /* const entry = await usageService.record({
         user_id: form.user_id,
-        subscription_id: form.payment_method === 'subscription' ? Number(form.subscription_id) : undefined,
+        subscription_id: form.payment_method === 'subscription' ? String(form.subscription_id) : undefined,
         units_used: units,
         order_reference: form.order_reference || undefined,
         description: form.notes || undefined,
         payment_method: form.payment_method,
-      });
+      }); */
+      const entry = await usageService.record({
+          user_id: form.user_id,
+          subscription_id: form.payment_method === 'subscription' ? form.subscription_id : undefined,   // was Number(form.subscription_id)
+          units_used: units,
+          order_reference: form.order_reference || undefined,
+          description: form.notes || undefined,
+          payment_method: form.payment_method,
+        });
+
       setUsageLog(p => [entry, ...p]);
       toast.success('Usage recorded successfully!');
       setForm(EMPTY_FORM);
@@ -118,7 +127,7 @@ export default function UsageRecording() {
         title="Usage Recording"
         subtitle="Record garment intake and deduct from customer subscription plans"
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => setShowForm(p => !p)}>
+          <button data-tour="tour-usage-record" className="btn btn-primary btn-sm" onClick={() => setShowForm(p => !p)}>
             <i className={`fas ${showForm ? 'fa-times' : 'fa-plus'} me-1`} />
             {showForm ? 'Cancel' : 'Record Usage'}
           </button>
@@ -244,7 +253,7 @@ export default function UsageRecording() {
         </div>
       )}
 
-      <div className="bg-white rounded-3 border overflow-hidden">
+      <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-usage-log">
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
           <h6 className="fw-semibold mb-0">Usage Log</h6>
           <button className="btn btn-outline-secondary btn-sm" onClick={loadLog}>

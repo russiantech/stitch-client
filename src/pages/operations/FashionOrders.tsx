@@ -54,7 +54,7 @@ export default function FashionOrders() {
       : STATUSES[Math.max(safeIdx - 1, 0)];
   };
 
-  const changeStatus = useCallback(async (orderId: number, direction: 'advance' | 'reverse') => {
+  const changeStatus = useCallback(async (orderId: string, direction: 'advance' | 'reverse') => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const next = nextStatus(order.status, direction);
@@ -89,7 +89,7 @@ export default function FashionOrders() {
         })}
       </div>
 
-      <div className="bg-white rounded-3 border p-3 mb-4 d-flex flex-wrap gap-2 align-items-center">
+      <div className="bg-white rounded-3 border p-3 mb-4 d-flex flex-wrap gap-2 align-items-center" data-tour="tour-fashion-status-filters">
         <input className="form-control form-control-sm" style={{ maxWidth: 220 }}
           placeholder="Search orders…" value={search} onChange={e => setSearch(e.target.value)} />
         <select className="form-select form-select-sm" style={{ maxWidth: 180 }} value={filter} onChange={e => setFilter(e.target.value)}>
@@ -102,7 +102,7 @@ export default function FashionOrders() {
         <span className="text-muted small ms-auto align-self-center">{filtered.length} orders</span>
       </div>
 
-      <div className="bg-white rounded-3 border overflow-hidden">
+      <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-fashion-table">
         {loading ? <LoadingSpinner /> : (
           <div className="table-responsive">
             <table className="table mb-0">

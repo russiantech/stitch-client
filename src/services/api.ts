@@ -247,7 +247,7 @@ export const userService = {
   resetPassword: (id: string, new_password: string) =>
     unwrap<{ email: string }>(`/users/${id}/reset-password`, { method: 'POST', json: { new_password } }),
   delete: (id: string) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
-  invite: (data: { name: string; email: string; phone?: string; role?: string }) =>
+  invite: (data: { names: string; email: string; phone?: string; role?: string }) =>
     unwrap<User>('/users/invite', { method: 'POST', json: data }),
   assignRole: (id: string, roleName: string) =>
     unwrap<User>(`/users/${id}/roles/${roleName}`, { method: 'POST' }),
@@ -261,9 +261,9 @@ export const planService = {
   get: (id: number) => unwrap<Plan>(`/subscriptions/plans/${id}`),
   create: (data: Partial<Plan> & { name: string; amount: number; units: number }) =>
     unwrap<Plan>('/subscriptions/plans', { method: 'POST', json: data }),
-  update: (id: number, data: Partial<Plan>) =>
+  update: (id: string, data: Partial<Plan>) =>
     unwrap<Plan>(`/subscriptions/plans/${id}`, { method: 'PUT', json: data }),
-  delete: (id: number) => apiRequest(`/subscriptions/plans/${id}`, { method: 'DELETE' }),
+  delete: (id: string) => apiRequest(`/subscriptions/plans/${id}`, { method: 'DELETE' }),
 };
 
 export const subscriptionService = {
@@ -323,7 +323,7 @@ export const orderService = {
   createFashion: (data: FashionOrderCreatePayload) => unwrap<OrderCreateResult>('/orders/fashion-orders', { method: 'POST', json: data }),
   update: (id: number, data: Record<string, unknown>) => apiRequest(`/orders/${id}`, { method: 'PUT', json: data }),
   updateFashion: (id: number, data: Record<string, unknown>) => apiRequest(`/orders/fashion-orders/${id}`, { method: 'PUT', json: data }),
-  updateStatus: (id: number, status: string, notes?: string, is_reversal = false) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}/status`, {
+  updateStatus: (id: string, status: string, notes?: string, is_reversal = false) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}/status`, {
       method: 'PUT', json: { status, notes, is_reversal },
     }),
 };
@@ -346,18 +346,18 @@ export const paymentService = {
 export const pricingService = {
   garments: () => unwrap<GarmentType[]>('/pricing/garments'),
   createGarment: (d: Partial<GarmentType> & { name: string; category: string; base_price: number }) => unwrap<GarmentType>('/pricing/garments', { method: 'POST', json: d }),
-  updateGarment: (id: number, d: Partial<GarmentType>) => unwrap<GarmentType>(`/pricing/garments/${id}`, { method: 'PUT', json: d }),
-  deleteGarment: (id: number) => apiRequest(`/pricing/garments/${id}`, { method: 'DELETE' }),
+  updateGarment: (id: string, d: Partial<GarmentType>) => unwrap<GarmentType>(`/pricing/garments/${id}`, { method: 'PUT', json: d }),
+  deleteGarment: (id: string) => apiRequest(`/pricing/garments/${id}`, { method: 'DELETE' }),
 
   services: () => unwrap<LaundryService[]>('/pricing/services'),
   createService: (d: Partial<LaundryService> & { name: string }) => unwrap<LaundryService>('/pricing/services', { method: 'POST', json: d }),
-  updateService: (id: number, d: Partial<LaundryService>) => unwrap<LaundryService>(`/pricing/services/${id}`, { method: 'PUT', json: d }),
-  deleteService: (id: number) => apiRequest(`/pricing/services/${id}`, { method: 'DELETE' }),
+  updateService: (id: string, d: Partial<LaundryService>) => unwrap<LaundryService>(`/pricing/services/${id}`, { method: 'PUT', json: d }),
+  deleteService: (id: string) => apiRequest(`/pricing/services/${id}`, { method: 'DELETE' }),
 
   areas: () => unwrap<DeliveryArea[]>('/pricing/areas'),
   createArea: (d: Partial<DeliveryArea> & { name: string; price: number }) => unwrap<DeliveryArea>('/pricing/areas', { method: 'POST', json: d }),
-  updateArea: (id: number, d: Partial<DeliveryArea>) => unwrap<DeliveryArea>(`/pricing/areas/${id}`, { method: 'PUT', json: d }),
-  deleteArea: (id: number) => apiRequest(`/pricing/areas/${id}`, { method: 'DELETE' }),
+  updateArea: (id: string, d: Partial<DeliveryArea>) => unwrap<DeliveryArea>(`/pricing/areas/${id}`, { method: 'PUT', json: d }),
+  deleteArea: (id: string) => apiRequest(`/pricing/areas/${id}`, { method: 'DELETE' }),
   
 };
 
@@ -365,18 +365,18 @@ export const pricingService = {
 export const categoryService = {
   list: () => unwrap<Category[]>('/products/categories'),
   create: (d: { name: string; description?: string; display_order?: number }) => unwrap<Category>('/products/categories', { method: 'POST', json: d }),
-  update: (id: number, d: Partial<Category>) => unwrap<Category>(`/products/categories/${id}`, { method: 'PUT', json: d }),
-  delete: (id: number) => apiRequest(`/products/categories/${id}`, { method: 'DELETE' }),
+  update: (id: string, d: Partial<Category>) => unwrap<Category>(`/products/categories/${id}`, { method: 'PUT', json: d }),
+  delete: (id: string) => apiRequest(`/products/categories/${id}`, { method: 'DELETE' }),
 };
 
 export const productService = {
-  list: (params?: { page?: number; page_size?: number; category_id?: number; search?: string; include_inactive?: boolean }) =>
+  list: (params?: { page?: number; page_size?: number; category_id?: string; search?: string; include_inactive?: boolean }) =>
     unwrap<SimpleListPage<Product>>(`/products${qs(params)}`),
-  get: (id: number) => unwrap<Product>(`/products/${id}`),
+  get: (id: string) => unwrap<Product>(`/products/${id}`),
   create: (fd: FormData) => unwrap<Product>('/products', { method: 'POST', headers: getAuthHeaders(), body: fd }),
-  update: (id: number, fd: FormData) => unwrap<Product>(`/products/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: fd }),
-  delete: (id: number) => apiRequest(`/products/${id}`, { method: 'DELETE' }),
-  deleteImages: (id: number, imageIds: number[]) => apiRequest(`/products/${id}/images`, { method: 'DELETE', json: { image_ids: imageIds } }),
+  update: (id: string, fd: FormData) => unwrap<Product>(`/products/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: fd }),
+  delete: (id: string) => apiRequest(`/products/${id}`, { method: 'DELETE' }),
+  deleteImages: (id: string, imageIds: string[]) => apiRequest(`/products/${id}/images`, { method: 'DELETE', json: { image_ids: imageIds } }),
 
 };
 
@@ -384,9 +384,9 @@ export const productService = {
 export const inventoryService = {
   list: (params?: { page?: number; page_size?: number; category?: string; low_stock?: boolean }) => unwrap<SimpleListPage<InventoryItem>>(`/inventory${qs(params)}`),
   create: (d: Partial<InventoryItem> & { name: string; category: string; unit: string }) => unwrap<InventoryItem>('/inventory', { method: 'POST', json: d }),
-  update: (id: number, d: Partial<InventoryItem>) => unwrap<InventoryItem>(`/inventory/${id}`, { method: 'PUT', json: d }),
-  adjust: (id: number, d: { action: string; quantity_change: number; reason?: string }) => unwrap<InventoryItem>(`/inventory/${id}/adjust`, { method: 'POST', json: d }),
-  delete: (id: number) => apiRequest(`/inventory/${id}`, { method: 'DELETE' }),
+  update: (id: string, d: Partial<InventoryItem>) => unwrap<InventoryItem>(`/inventory/${id}`, { method: 'PUT', json: d }),
+  adjust: (id: string, d: { action: string; quantity_change: number; reason?: string }) => unwrap<InventoryItem>(`/inventory/${id}/adjust`, { method: 'POST', json: d }),
+  delete: (id: string) => apiRequest(`/inventory/${id}`, { method: 'DELETE' }),
 };
 
 // ─── NOTIFICATIONS (prefix "/notifications", routes doubled) ─────────────────

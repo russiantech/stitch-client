@@ -87,7 +87,7 @@ export default function Analytics() {
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-analytics-kpis">
         {[
           { label: 'Total Revenue', value: formatNGN(kpis.revenue.total), change: `${kpis.revenue.growth >= 0 ? '+' : ''}${kpis.revenue.growth}%`, icon: 'fa-naira-sign', color: 'success' },
           { label: 'Total Orders', value: kpis.orders.total, change: `${kpis.orders.this_period} this period`, icon: 'fa-box', color: 'dark' },
@@ -113,7 +113,7 @@ export default function Analytics() {
         ))}
       </div>
 
-      <div className="row g-4 mb-4">
+      <div className="row g-4 mb-4" data-tour="tour-analytics-charts">
         <div className="col-lg-6">
           <div className="bg-white rounded-3 border p-4">
             <div className="d-flex justify-content-between align-items-start mb-4">

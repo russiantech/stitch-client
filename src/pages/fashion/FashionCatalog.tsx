@@ -84,7 +84,7 @@ function ProductModal({ mode, product, categories, onClose, onSaved }: {
 
   const removeNewFile = (idx: number) => setNewFiles(prev => prev.filter((_, i) => i !== idx));
 
-  const removeExistingImage = async (imageId: number) => {
+  const removeExistingImage = async (imageId: string) => {
     if (!product || !window.confirm('Remove this image?')) return;
     try {
       await productService.deleteImages(product.id, [imageId]);
@@ -207,7 +207,8 @@ function ProductModal({ mode, product, categories, onClose, onSaved }: {
                       </div>
                       <ExistingMediaGrid
                         media={existingImages.map(img => ({ id: img.id, url: img.url, type: img.media_type, name: name }))}
-                        onRemove={(item) => removeExistingImage(Number(item.id))}
+                        onRemove={(item) => removeExistingImage(String(item.id))}
+                        // onRemove={(item) => removeExistingImage(item.id)}
                       />
                     </div>
                   )}
@@ -454,7 +455,7 @@ export default function FashionCatalog() {
     try {
       const data = await productService.list({
         page, page_size: pageSize,
-        category_id: catFilter ? Number(catFilter) : undefined,
+        category_id: catFilter ? String(catFilter) : undefined,
         search: search || undefined,
       });
       setProducts(data.items);
@@ -478,7 +479,7 @@ export default function FashionCatalog() {
   useEffect(() => { loadProducts(); }, [loadProducts]);
   useEffect(() => { loadCategories(); }, [loadCategories]);
 
-  const openView = async (id: number) => {
+  const openView = async (id: string) => {
     try {
       const data = await productService.get(id);
       setSelectedProduct(data);
@@ -488,7 +489,7 @@ export default function FashionCatalog() {
     }
   };
 
-  const openEdit = async (id: number) => {
+  const openEdit = async (id: string) => {
     try {
       const data = await productService.get(id);
       setSelectedProduct(data);
@@ -498,7 +499,7 @@ export default function FashionCatalog() {
     }
   };
 
-  const deleteProduct = async (id: number) => {
+  const deleteProduct = async (id: string) => {
     if (!window.confirm('Delete this product?')) return;
     try {
       await productService.delete(id);
@@ -520,13 +521,13 @@ export default function FashionCatalog() {
         title="Fashion Catalog"
         subtitle="Manage products, categories and fashion inventory"
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => setModal('add')}>
+          <button data-tour="tour-catalog-add" className="btn btn-primary btn-sm" onClick={() => setModal('add')}>
             <i className="fas fa-plus me-1" />Add Product
           </button>
         }
       />
 
-      <ul className="nav nav-tabs mb-4">
+      <ul className="nav nav-tabs mb-4" data-tour="tour-catalog-tabs">
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
             <i className="fas fa-boxes me-2" />All Products
