@@ -201,6 +201,7 @@ const STEPS: Record<NavRole, TourStep[]> = {
 
     { target: 'nav-/orders', title: 'Track Your Orders', content: "See every order's live status, from pickup to delivery.", placement: 'right', path: '/orders' },
     { target: 'tour-orders-tabs', title: 'Laundry & Fashion', content: 'Switch between your laundry and fashion orders here.', placement: 'bottom', path: '/orders' },
+    { target: 'tour-orders-list', title: 'Full Order Details', content: 'Tap any order card to open its full timeline, payment info, and delivery details.', placement: 'right', path: '/orders' },
 
     { target: 'nav-/subscriptions', title: 'Subscriptions', content: 'Subscribe to a volume plan and save on recurring laundry.', placement: 'right', path: '/subscriptions' },
     { target: 'tour-sub-plans-tab', title: 'Available Plans', content: 'Pick a plan — units pool together if you subscribe to more than one.', placement: 'bottom', path: '/subscriptions' },
@@ -211,30 +212,43 @@ const STEPS: Record<NavRole, TourStep[]> = {
     { target: 'topbar-profile', title: 'Your Account', content: 'Update your profile, or replay this tour anytime from here.', placement: 'bottom', path: '/dashboard' },
     { target: 'tour-help-button', title: 'Stuck later? Come back here', content: 'This button always replays the walkthrough — no need to remember everything now.', placement: 'top', path: '/dashboard' },
   ],
+
   admin: [
-    { target: 'sidebar-brand', title: 'Welcome to Stitch! 👋', content: "Here's a quick tour of your admin workspace.", placement: 'right', path: '/ops' },
-    { target: 'nav-/ops', title: 'Ops Dashboard', content: 'Live order volume, pending pickups, and daily activity.', placement: 'right', path: '/ops' },
-    { target: 'tour-ops-kpis', title: 'Key Metrics', content: 'Revenue, active orders, and order-type breakdown — updated live.', placement: 'bottom', path: '/ops' },
-    { target: 'tour-ops-quick-nav', title: 'Jump Straight In', content: 'Quick counts and one-tap access to laundry, fashion, pickups, and deliveries.', placement: 'bottom', path: '/ops' },
-    { target: 'tour-ops-urgent', title: 'Urgent Orders', content: "Anything flagged Express or urgent surfaces here first, so nothing slips through.", placement: 'right', path: '/ops' },
-    { target: 'tour-ops-staff', title: 'Your Team', content: "See who's on staff and their current status at a glance.", placement: 'left', path: '/ops' },
-    { target: 'tour-ops-latest-orders', title: 'Latest Activity', content: 'The most recent orders across both laundry and fashion, in one table.', placement: 'top', path: '/ops' },
+  { target: 'sidebar-brand', title: 'Welcome to Stitch! 👋', content: "Here's a quick tour of your admin workspace.", placement: 'right', path: '/ops' },
+  { target: 'nav-/ops', title: 'Ops Dashboard', content: 'Live order volume, pending pickups, and daily activity.', placement: 'right', path: '/ops' },
+  { target: 'tour-ops-kpis', title: 'Key Metrics', content: 'Revenue, active orders, and order-type breakdown — updated live.', placement: 'bottom', path: '/ops' },
+  { target: 'tour-ops-quick-nav', title: 'Jump Straight In', content: 'Quick counts and one-tap access to laundry, fashion, pickups, and deliveries.', placement: 'bottom', path: '/ops' },
+  { target: 'tour-ops-urgent', title: 'Urgent Orders', content: "Anything flagged Express or urgent surfaces here first.", placement: 'right', path: '/ops' },
+  { target: 'tour-ops-staff', title: 'Your Team', content: "See who's on staff and their current status.", placement: 'left', path: '/ops' },
+  { target: 'tour-ops-latest-orders', title: 'Latest Activity', content: 'Recent orders across both laundry and fashion.', placement: 'top', path: '/ops' },
 
-    { target: 'nav-/ops/laundry', title: 'Laundry Orders', content: 'Manage every laundry order as it moves through your pipeline.', placement: 'right', path: '/ops/laundry' },
-    { target: 'nav-/crm', title: 'CRM', content: 'View and manage your customer base.', placement: 'right', path: '/ops' },
-    { target: 'nav-/analytics', title: 'Analytics', content: 'Revenue, order trends, and subscription performance at a glance.', placement: 'right', path: '/ops' },
-    { target: 'nav-/admin/users', title: 'Team Management', content: 'Invite staff, assign roles, and manage access.', placement: 'right', path: '/ops' },
+  { target: 'nav-/ops/laundry', title: 'Laundry Orders', content: 'Manage every laundry order as it moves through your pipeline — sorting, washing, drying, and beyond.', placement: 'right', path: '/ops/laundry' },
+  { target: 'nav-/ops/fashion', title: 'Fashion Orders', content: 'Track custom tailoring, alterations, and fashion requests from consultation to delivery.', placement: 'right', path: '/ops/fashion' },
+  { target: 'nav-/ops/pickups', title: 'Pickups', content: 'Everything scheduled to be collected from customers.', placement: 'right', path: '/ops' },
+  { target: 'nav-/ops/deliveries', title: 'Deliveries', content: 'Orders ready to go back out to customers.', placement: 'right', path: '/ops' },
 
-    { target: 'nav-/orgs/settings', title: 'Organization Settings', content: 'Manage your invite code/link and who can join your org.', placement: 'right', path: '/orgs/settings' },
-    { target: 'tour-invite-link', title: 'Invite Your Team', content: 'Share this link, or the code, with staff to have them join instantly.', placement: 'bottom', path: '/orgs/settings' },
+  { target: 'nav-/fashion-catalog', title: 'Fashion Catalog', content: 'Manage the products and categories you showcase for fashion services.', placement: 'right', path: '/fashion-catalog' },
+  { target: 'nav-/crm', title: 'CRM', content: 'View and manage your full customer base — history, contact info, and activity.', placement: 'right', path: '/crm' },
+  { target: 'nav-/inventory', title: 'Inventory', content: 'Track detergents, packaging, and other supplies — with low-stock alerts.', placement: 'right', path: '/inventory' },
+  { target: 'nav-/billing', title: 'Billing', content: 'Review invoices and payment records across your organization.', placement: 'right', path: '/billing' },
+  { target: 'nav-/analytics', title: 'Analytics', content: 'Revenue, order trends, and subscription performance at a glance.', placement: 'right', path: '/analytics' },
 
-    { target: 'nav-/orgs/payouts', title: 'Payout Settings', content: "Set up how your business gets paid — let's take a look.", placement: 'right', path: '/orgs/settings' },
-    { target: 'tour-payout-provider', title: 'Choose a Provider', content: 'Pick your preferred payment provider for collecting customer payments.', placement: 'bottom', path: '/orgs/payouts' },
-    { target: 'tour-payout-account', title: 'Verify Your Bank Account', content: 'Enter your account number — we verify the account name automatically before saving.', placement: 'top', path: '/orgs/payouts' },
+  { target: 'nav-/admin/users', title: 'Team Management', content: 'Invite staff, assign roles, and manage access.', placement: 'right', path: '/admin/users' },
+  { target: 'nav-/admin/plans', title: 'Plans', content: 'Create and manage the subscription plans your customers can subscribe to.', placement: 'right', path: '/admin/plans' },
+  { target: 'nav-/admin/pricing', title: 'Pricing Settings', content: 'Set garment prices, service multipliers, and delivery area fees.', placement: 'right', path: '/admin/pricing' },
+  { target: 'nav-/admin/usage', title: 'Usage Recording', content: "Log unit deductions when a subscriber's garments come in.", placement: 'right', path: '/admin/usage' },
 
-    { target: 'topbar-notifications', title: 'Stay Notified', content: 'Important updates land here in real time.', placement: 'bottom', path: '/ops' },
-    { target: 'tour-help-button', title: 'Stuck later? Come back here', content: 'This button always replays the walkthrough.', placement: 'top', path: '/ops' },
-  ],
+  { target: 'nav-/orgs/settings', title: 'Organization Settings', content: 'Manage your invite code/link and who can join your org.', placement: 'right', path: '/orgs/settings' },
+  { target: 'tour-invite-link', title: 'Invite Your Team', content: 'Share this link, or the code, with staff to have them join instantly.', placement: 'bottom', path: '/orgs/settings' },
+
+  { target: 'nav-/orgs/payouts', title: 'Payout Settings', content: "Set up how your business gets paid — let's take a look.", placement: 'right', path: '/orgs/settings' },
+  { target: 'tour-payout-provider', title: 'Choose a Provider', content: 'Pick your preferred payment provider for collecting customer payments.', placement: 'bottom', path: '/orgs/payouts' },
+  { target: 'tour-payout-account', title: 'Verify Your Bank Account', content: 'Enter your account number — we verify the account name automatically before saving.', placement: 'top', path: '/orgs/payouts' },
+
+  { target: 'topbar-notifications', title: 'Stay Notified', content: 'Important updates land here in real time.', placement: 'bottom', path: '/ops' },
+  { target: 'topbar-profile', title: 'Your Account', content: 'Update your profile, or replay this tour anytime from here.', placement: 'bottom', path: '/ops' },
+  { target: 'tour-help-button', title: 'Stuck later? Come back here', content: 'This button always replays the walkthrough.', placement: 'top', path: '/ops' },
+],
 
   staff: [
     { target: 'sidebar-brand', title: 'Welcome to Stitch! 👋', content: 'Quick tour of your workspace.', placement: 'right', path: '/staff' },

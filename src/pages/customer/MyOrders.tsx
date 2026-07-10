@@ -433,7 +433,7 @@ export default function MyOrders() {
       </ul>
 
       <div className="row g-4" style={{ position: 'relative' }}>
-        <div className={selected && !isMobile ? 'col-lg-7' : 'col-12'}>
+        <div className={selected && !isMobile ? 'col-lg-7' : 'col-12'} data-tour="tour-orders-list">
           {loading ? <LoadingSpinner /> : orders.length === 0 ? (
             <EmptyState icon="fa-box-open" title="No orders yet" message="Create your first order to get started" />
           ) : (
