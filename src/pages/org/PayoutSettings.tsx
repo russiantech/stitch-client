@@ -516,7 +516,7 @@ export default function PayoutSettings() {
           ))}
         </div> */}
 
-        <div className="row g-2 mb-4">
+        <div className="row g-2 mb-4" data-tour="tour-payout-provider">
           {PROVIDERS.map(p => {
             const isSelected = provider === p.value;
             return (
@@ -570,8 +570,7 @@ export default function PayoutSettings() {
         )}
 
         <label className="form-label small fw-medium">Account Number</label>
-        <input
-          className="form-control mb-2"
+        <input className="form-control mb-2" data-tour="tour-payout-account"
           value={accountNumber}
           onChange={e => {
             const val = e.target.value.replace(/\D/g, '').slice(0, 10);

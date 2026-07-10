@@ -299,7 +299,7 @@ export default function CreateOrder() {
     <div>
       <h6 className="fw-semibold mb-1">Choose Services</h6>
       <p className="text-muted small mb-4">Select one or more. Price multiplier is applied to all garment base prices.</p>
-      <div className="row g-3">
+      <div className="row g-3" data-tour="tour-order-services">
         {laundryServices.filter(s => s.is_active !== false).map(svc => {
           const sel = form.services.includes(svc.id);
           return (
@@ -325,7 +325,7 @@ export default function CreateOrder() {
           );
         })}
       </div>
-      <div className="mt-4">
+      <div className="mt-4" data-tour="tour-order-priority">
         <label className="form-label small fw-medium">Priority</label>
         <div className="d-flex gap-3">
           {(['Normal', 'Express'] as const).map(p => (
@@ -648,7 +648,7 @@ export default function CreateOrder() {
         subtitle={actingOnBehalf ? `Acting on behalf of ${behalfName}. Order will be attributed to their account.` : 'Select services, garments and schedule a pickup'}
       />
 
-      <div className="d-flex align-items-center mb-5">
+      <div className="d-flex align-items-center mb-5" data-tour="tour-order-steps">
         {STEPS.map((s, i) => (
           <React.Fragment key={s}>
             <div className="d-flex align-items-center gap-2 flex-shrink-0">

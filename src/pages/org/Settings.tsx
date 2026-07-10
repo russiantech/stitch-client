@@ -63,7 +63,7 @@ export default function OrganizationSettings() {
     <div style={{ maxWidth: 640 }}>
       <SectionHeader title="Organization Settings" subtitle="Manage how staff and customers join your organization" />
 
-      <div className="bg-white rounded-3 border p-4 mb-3">
+      <div className="bg-white rounded-3 border p-4 mb-3" data-tour="tour-invite-link">
         <h6 className="fw-semibold mb-3">Invite Code & Link</h6>
 
         {linkInfo ? (

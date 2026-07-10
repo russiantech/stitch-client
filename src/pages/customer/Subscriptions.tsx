@@ -664,7 +664,7 @@ export default function Subscriptions() {
   const [logLoading, setLogLoading] = useState(false);
   const [paying, setPaying] = useState<number | null>(null);
   const [confirm, setConfirm] = useState<{ action: 'cancel' | 'pause'; sub: Subscription } | null>(null);
-  const [actioning, setActioning] = useState<number | null>(null);
+  const [actioning, setActioning] = useState<string | null>(null);
   const [tab, setTab] = useState<'plans' | 'active' | 'log'>('plans');
   const [verifying, setVerifying] = useState(false);
 
@@ -855,10 +855,14 @@ export default function Subscriptions() {
         </div>
       )}
 
-      <ul className="nav nav-tabs mb-4">
+     <ul className="nav nav-tabs mb-4">
         {TABS.map(t => (
           <li key={t.key} className="nav-item">
-            <button className={`nav-link ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
+            <button
+              data-tour={t.key === 'plans' ? 'tour-sub-plans-tab' : t.key === 'log' ? 'tour-sub-usage-tab' : undefined}
+              className={`nav-link ${tab === t.key ? 'active' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
               <i className={`fas ${t.icon} me-2 d-none d-sm-inline`} />{t.label}
             </button>
           </li>

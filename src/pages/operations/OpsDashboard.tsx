@@ -1,3 +1,4 @@
+// src/pages/operations/OpsDashboard.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { StatCard, StatusBadge, SectionHeader, LoadingSpinner } from '@/components/shared/index.tsx';
@@ -62,7 +63,7 @@ export default function OpsDashboard() {
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-ops-kpis">
         <div className="col-6 col-lg-3">
           <StatCard label="Revenue (Period)" value={formatNGN(kpis.revenue.this_period)} icon="fa-naira-sign" iconBg="bg-success"
             change={`${kpis.revenue.growth >= 0 ? '+' : ''}${kpis.revenue.growth}% vs last period`} changeType={kpis.revenue.growth >= 0 ? 'positive' : 'negative'} />
@@ -78,7 +79,7 @@ export default function OpsDashboard() {
         </div>
       </div>
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-ops-quick-nav">
         {[
           { to: '/ops/laundry', icon: 'fa-soap', label: 'Laundry Orders', count: kpis.orders.laundry, color: 'primary' },
           { to: '/ops/fashion', icon: 'fa-shirt', label: 'Fashion Orders', count: kpis.orders.fashion, color: 'info' },
@@ -101,7 +102,7 @@ export default function OpsDashboard() {
 
       <div className="row g-4">
         <div className="col-lg-6">
-          <div className="bg-white rounded-3 border overflow-hidden">
+          <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-ops-urgent">
             <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
               <h6 className="fw-semibold mb-0">
                 <i className="fas fa-bolt text-warning me-2" />Urgent Orders
@@ -134,7 +135,7 @@ export default function OpsDashboard() {
         </div>
 
         <div className="col-lg-6">
-          <div className="bg-white rounded-3 border overflow-hidden">
+          <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-ops-staff">
             <div className="p-3 border-bottom">
               <h6 className="fw-semibold mb-0"><i className="fas fa-users text-primary me-2" />Staff On Team</h6>
             </div>
@@ -150,8 +151,8 @@ export default function OpsDashboard() {
                     <div className="fw-medium small">{s.names}</div>
                     <div className="text-muted text-capitalize" style={{ fontSize: 11 }}>{s.roles.join(', ')}</div>
                   </div>
-                  <span className={`badge ${s.is_active ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 10 }}>
-                    {s.is_active ? 'Active' : 'Inactive'}
+                  <span className={`badge ${s.status === 'active' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 10 }}>
+                    {s.status === 'active' ? 'Active' : s.status === 'pending' ? 'Pending' : s.status === 'suspended' ? 'Suspended' : 'Inactive'}
                   </span>
                 </div>
               ))}
@@ -160,7 +161,7 @@ export default function OpsDashboard() {
         </div>
 
         <div className="col-12">
-          <div className="bg-white rounded-3 border overflow-hidden">
+          <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-ops-latest-orders">
             <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
               <h6 className="fw-semibold mb-0">Latest Orders</h6>
               <div className="d-flex gap-2">

@@ -1,8 +1,12 @@
+// src/components/layouts/Topbar.tsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { useAppData } from '../../context/AppDataContext.tsx';
 import type { AppNotification } from '@/types/index.ts';
+import { useTour } from '@/context/TourContext.tsx';
+import { getNavRole } from '@/utils/roles';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':'Dashboard','/orders':'My Orders','/orders/new':'Create Order',
@@ -50,7 +54,7 @@ function NotifDropdown({ notifications, unreadCount, onRead, onReadAll, onClose 
           : notifications.slice(0,8).map(n => (
             <div key={n.id}
               className={`px-3 py-2 border-bottom d-flex gap-2 align-items-start ${!n.is_read?'bg-primary bg-opacity-5':''}`}
-              style={{cursor:'pointer'}} onClick={() => !n.is_read && onRead(n.id)}>
+              style={{cursor:'pointer'}} onClick={() => !n.is_read && onRead(typeof n.id === 'string' ? Number(n.id) : n.id)}>
               <div className="mt-1 flex-shrink-0" style={{width:18}}>
                 <i className={`fas ${TYPE_ICONS[n.type]??'fa-bell'} text-primary`} style={{fontSize:12}} />
               </div>
@@ -73,9 +77,14 @@ function NotifDropdown({ notifications, unreadCount, onRead, onReadAll, onClose 
   );
 }
 
-function ProfileDropdown({ name, email, role, onSignOut, onClose }:{
-  name:string; email:string; role:string;
-  onSignOut:()=>void; onClose:()=>void;
+// function ProfileDropdown({ name, email, role, onSignOut, onClose }:{
+//   name:string; email:string; role:string;
+//   onSignOut:()=>void; onClose:()=>void;
+// }) {
+// v2
+function ProfileDropdown({ name, email, role, onSignOut, onReplayTour, onClose }: {
+  name: string; email: string; role: string;
+  onSignOut: () => void; onReplayTour: () => void; onClose: () => void;
 }) {
   const navigate = useNavigate();
   const go = (p: string) => { navigate(p); onClose(); };
@@ -112,20 +121,39 @@ function ProfileDropdown({ name, email, role, onSignOut, onClose }:{
           </button>
         ))}
       </div>
+
       <div className="border-top py-1">
         <button
-          className="btn btn-link w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-danger"
+          className="btn btn-link w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark"
+          style={{ fontSize: 13, borderRadius: 0 }}
+          onClick={() => { onReplayTour(); onClose(); }}
+        >
+          <i className="fas fa-route text-muted" style={{ width: 16, fontSize: 12 }} />Replay Walkthrough
+        </button>
+      </div>
+
+      <div className="border-top py-1">
+        <button className="btn btn-link w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-danger"
           style={{fontSize:13}} onClick={onSignOut}>
           <i className="fas fa-sign-out-alt" style={{width:16,fontSize:12}} />Sign Out
         </button>
       </div>
+
+      <>
+      
+      </>
+
     </div>
   );
 }
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  // const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
+  const { startTour } = useTour();
+  const role = getNavRole(user, isAdmin);
+
   const { notifications, unreadCount, markNotificationRead, markAllRead } = useAppData();
   const navigate = useNavigate();
   const [showNotifs,  setShowNotifs]  = useState(false);
@@ -156,7 +184,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       <div className="d-flex align-items-center gap-2">
         {/* Notifications */}
         <div ref={notifsRef} style={{position:'relative'}}>
-          <button className="btn btn-sm btn-outline-secondary position-relative"
+          <button data-tour="topbar-notifications" className="btn btn-sm btn-outline-secondary position-relative"
             onClick={() => { setShowNotifs(p=>!p); setShowProfile(false); }}>
             <i className="fas fa-bell" />
             {unreadCount > 0 && (
@@ -174,7 +202,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
         {/* Profile */}
         <div ref={profileRef} style={{position:'relative'}}>
-          <button className="btn btn-sm d-flex align-items-center gap-2" style={{padding:'4px 8px'}}
+          <button data-tour="topbar-profile" className="btn btn-sm d-flex align-items-center gap-2" style={{padding:'4px 8px'}}
             onClick={() => { setShowProfile(p=>!p); setShowNotifs(false); }}>
             <div className="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
               style={{width:30,height:30,fontSize:12,flexShrink:0,background:'var(--primary)'}}>
@@ -185,12 +213,23 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             </span>
             <i className="fas fa-chevron-down d-none d-sm-inline text-muted" style={{fontSize:9}} />
           </button>
+          {/* {showProfile && user && (
+            <ProfileDropdown
+              name={user.names} email={user.email} role={user.roles?.[0] ?? 'User'}
+              onSignOut={handleSignOut} onClose={() => setShowProfile(false)} onReplayTour={function (): void {
+                throw new Error('Function not implemented.');
+              } }            />
+          )} */}
+
           {showProfile && user && (
             <ProfileDropdown
               name={user.names} email={user.email} role={user.roles?.[0] ?? 'User'}
-              onSignOut={handleSignOut} onClose={() => setShowProfile(false)}
+              onSignOut={handleSignOut}
+              onReplayTour={() => startTour(role)}
+              onClose={() => setShowProfile(false)}
             />
           )}
+
         </div>
       </div>
     </header>

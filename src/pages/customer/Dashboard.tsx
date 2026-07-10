@@ -1,3 +1,4 @@
+// src/pages/customer/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { StatCard, StatusBadge, EmptyState } from '@/components/shared/index.tsx';
@@ -64,14 +65,14 @@ export default function CustomerDashboard() {
         ))}
       </div> */}
 
-      <div className="row g-2 g-md-3 mb-4">
+<div className="row g-2 g-md-3 mb-4" data-tour="tour-dash-quick-actions">
   {[
     { to: '/orders/new', icon: 'fa-soap', title: 'Laundry', sub: 'Schedule pickup', color: 'primary' },
     { to: '/fashion/new', icon: 'fa-shirt', title: 'Fashion', sub: 'Tailoring', color: 'warning' },
     { to: '/subscriptions', icon: 'fa-layer-group', title: 'Subscribe', sub: 'Volume plans', color: 'success' },
     { to: '/orders', icon: 'fa-box', title: 'Track', sub: 'View orders', color: 'info' },
-    
   ].map(a => (
+
     <div key={a.to} className="col-6 col-lg-3">
       <Link to={a.to} className="text-decoration-none">
         <div className="stat-card d-flex flex-column flex-sm-row align-items-center align-items-sm-start text-center text-sm-start gap-2 gap-sm-3 h-100 p-2 p-md-3">
@@ -120,7 +121,7 @@ export default function CustomerDashboard() {
       </div>
 
       {subscriptions.length > 0 ? (
-        <div className="bg-white rounded-3 border p-4 mb-4">
+      <div className="bg-white rounded-3 border p-4 mb-4" data-tour="tour-dash-subscription-volume">
           <div className="d-flex align-items-center justify-content-between mb-2">
             <div>
               <h6 className="fw-semibold mb-0">Subscription Volume</h6>
@@ -164,7 +165,7 @@ export default function CustomerDashboard() {
 
       <div className="row g-4">
         <div className="col-lg-7">
-          <div className="bg-white rounded-3 border overflow-hidden">
+          <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-dash-recent-orders">  
             <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
               <h6 className="fw-semibold mb-0">Recent Orders</h6>
               <Link to="/orders" className="btn btn-sm btn-outline-primary">View All</Link>
@@ -206,7 +207,7 @@ export default function CustomerDashboard() {
         </div>
 
         <div className="col-lg-5">
-          <div className="bg-white rounded-3 border overflow-hidden">
+        <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-dash-service-plans">
             <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
               <h6 className="fw-semibold mb-0">Service Plans</h6>
               <Link to="/subscriptions" className="btn btn-sm btn-outline-success">Subscribe</Link>

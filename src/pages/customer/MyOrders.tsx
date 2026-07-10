@@ -417,7 +417,7 @@ export default function MyOrders() {
         actions={<Link to="/orders/new" className="btn btn-primary btn-sm"><i className="fas fa-plus me-1" />New Order</Link>}
       />
 
-      <ul className="nav nav-tabs mb-4">
+      <ul className="nav nav-tabs mb-4" data-tour="tour-orders-tabs">
         <li className="nav-item">
           <button className={`nav-link ${tab === 'laundry' ? 'active' : ''}`}
             onClick={() => switchTab('laundry')}>
