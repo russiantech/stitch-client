@@ -124,7 +124,7 @@ function BannerTrigger() {
   }, [user?.id, role]);
   return null;
 }
-
+/*
 function ShellBody({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAdmin } = useAuth();
@@ -154,6 +154,42 @@ function ShellBody({ children }: AppShellProps) {
     </div>
   );
 }
+
+*/
+
+// AppShell.tsx — ShellBody, corrected
+function ShellBody({ children }: AppShellProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
+  const { active, steps, stepIndex } = useTour();
+  const role = getNavRole(user, isAdmin);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 992) return;
+    if (!active) { setSidebarOpen(false); return; }
+    const target = steps[stepIndex]?.target ?? '';
+    const isSidebarTarget = target.startsWith('nav-') || target === 'sidebar-brand' || target === 'sidebar-logout';
+    setSidebarOpen(isSidebarTarget);
+  }, [active, stepIndex, steps]);
+
+  return (
+    <div className="app-wrapper" style={{ flexDirection: 'column' }}>
+      <ImpersonationBanner />
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <Sidebar show={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="main-content">
+          <Topbar onMenuClick={() => setSidebarOpen(p => !p)} />
+          <main className="page-content">{children}</main>
+        </div>
+      </div>
+      <BannerTrigger />
+      <TourOverlay />
+      <TourButton role={role} />
+      <TourBanner role={role} />
+    </div>
+  );
+}
+
 
 export default function AppShell({ children }: AppShellProps) {
   return (
