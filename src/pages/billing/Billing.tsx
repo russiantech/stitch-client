@@ -277,7 +277,7 @@ export default function Billing() {
         ))}
       </div>
 
-      <div className="bg-white rounded-3 border overflow-hidden">
+  <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-billing-table">
         {loading ? <LoadingSpinner /> : (
           <div className="table-responsive">
             <table className="table mb-0">

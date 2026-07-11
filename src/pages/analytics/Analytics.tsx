@@ -148,7 +148,7 @@ export default function Analytics() {
       </div>
 
       <div className="row g-4 mb-4">
-        <div className="col-lg-4">
+        <div className="col-lg-4" data-tour="tour-analytics-order-mix">
           <div className="bg-white rounded-3 border p-4">
             <h6 className="fw-semibold mb-4">Order Mix</h6>
             <div className="d-flex flex-column gap-3">
@@ -171,7 +171,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="col-lg-4">
+        <div className="col-lg-4" data-tour="tour-analytics-delivery-perf">
           <div className="bg-white rounded-3 border p-4">
             <h6 className="fw-semibold mb-4">Delivery Performance</h6>
             <div className="d-flex flex-column gap-3">
@@ -197,7 +197,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="col-lg-4">
+        <div className="col-lg-4" data-tour="tour-analytics-sub-perf">
           <div className="bg-white rounded-3 border p-4">
             <h6 className="fw-semibold mb-4">Subscription Performance</h6>
             <div className="d-flex flex-column gap-3">

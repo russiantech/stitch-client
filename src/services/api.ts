@@ -321,7 +321,7 @@ export const orderService = {
   get: (id: number) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}`),
   create: (data: LaundryOrderCreatePayload) => unwrap<OrderCreateResult>('/orders', { method: 'POST', json: data }),
   createFashion: (data: FashionOrderCreatePayload) => unwrap<OrderCreateResult>('/orders/fashion-orders', { method: 'POST', json: data }),
-  update: (id: number, data: Record<string, unknown>) => apiRequest(`/orders/${id}`, { method: 'PUT', json: data }),
+  update: (id: string, data: Record<string, unknown>) => apiRequest(`/orders/${id}`, { method: 'PUT', json: data }),
   updateFashion: (id: number, data: Record<string, unknown>) => apiRequest(`/orders/fashion-orders/${id}`, { method: 'PUT', json: data }),
   updateStatus: (id: string, status: string, notes?: string, is_reversal = false) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}/status`, {
       method: 'PUT', json: { status, notes, is_reversal },

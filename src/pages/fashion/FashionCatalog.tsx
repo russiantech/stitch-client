@@ -357,15 +357,15 @@ function CategoriesTab({ categories, onRefresh }: { categories: Category[]; onRe
   };
 
   return (
-    <div>
+    <div data-tour="tour-catalog-categories-table">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h6 className="fw-semibold mb-0">Categories ({categories.length})</h6>
-        <button className="btn btn-primary btn-sm" onClick={openAdd}>
+        <button data-tour="tour-inventory-add" className="btn btn-primary btn-sm" onClick={openAdd}>
           <i className="fas fa-plus me-1" />Add Category
         </button>
       </div>
 
-      <div className="bg-white rounded-3 border overflow-hidden">
+      <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-inventory-table">
         <div className="table-responsive">
           <table className="table mb-0">
             <thead>
@@ -580,7 +580,7 @@ export default function FashionCatalog() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3 border overflow-hidden">
+          <div className="bg-white rounded-3 border overflow-hidden" data-tour="tour-catalog-products-table">
             <div className="table-card-header">
               <h6 className="mb-0 fw-semibold">Products ({total})</h6>
             </div>

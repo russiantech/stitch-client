@@ -111,7 +111,7 @@ export default function CRM() {
         ))}
       </div>
 
-      <div className="bg-white rounded-3 border p-3 mb-4 d-flex flex-wrap gap-2 align-items-center">
+      <div className="bg-white rounded-3 border p-3 mb-4 d-flex flex-wrap gap-2 align-items-center" data-tour="tour-crm-search">
         <input
           className="form-control form-control-sm"
           style={{ maxWidth: 240 }}

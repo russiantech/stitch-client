@@ -126,7 +126,7 @@ export default function Sidebar({ show, onClose }: { show: boolean; onClose: () 
           })}
         </nav>
         <div className="p-3 border-top">
-          <button className="btn btn-outline-danger btn-sm w-100" onClick={handleSignOut}>
+          <button data-tour="sidebar-logout" className="btn btn-outline-danger btn-sm w-100" onClick={handleSignOut}>
             <i className="fas fa-sign-out-alt me-2" />Log Out
           </button>
         </div>

@@ -134,7 +134,7 @@ export default function UsageRecording() {
         }
       />
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4" data-tour="tour-usage-stats">
         {[
           { label: 'Total Records', value: usageLog.length, color: 'var(--primary)' },
           { label: 'Units Today', value: totalToday, color: 'var(--warning)' },
