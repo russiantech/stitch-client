@@ -392,7 +392,7 @@ export const inventoryService = {
 // ─── NOTIFICATIONS (prefix "/notifications", routes doubled) ─────────────────
 export const notificationService = {
   list: (params?: { page?: number; page_size?: number; unread_only?: boolean }) => unwrap<SimpleListPage<AppNotification>>(`/notifications${qs(params)}`),
-  markRead: (id: number) => apiRequest(`/notifications/${id}/read`, { method: 'PUT' }),
+  markRead: (id: string) => apiRequest(`/notifications/${id}/read`, { method: 'PUT' }),
   markAllRead: () => apiRequest('/notifications/read-all', { method: 'PUT' }),
   unreadCount: () => unwrap<{ count: number }>('/notifications/unread-count'),
 };

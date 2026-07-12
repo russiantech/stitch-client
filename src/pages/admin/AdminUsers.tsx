@@ -182,7 +182,7 @@ function EditUserModal({ user: u, onClose, onSaved }: { user: User; onClose: () 
               </div>
               <div className="col-12">
                 <div className="form-check form-switch"> 
-                  <input className="form-check-input" type="checkbox" id="user-active" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+                  <input className="form-check-input" type="checkbox" id="user-active" checked={status === 'active'} onChange={e => setStatus(e.target.checked ? 'active' : 'inactive')} />
                   <label className="form-check-label small" htmlFor="user-active">Account Active</label>
                 </div>
               </div>

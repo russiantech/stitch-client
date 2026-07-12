@@ -110,6 +110,8 @@ import TourButton from '@/components/tour/TourButton.tsx';
 import TourBanner from '@/components/tour/TourBanner.tsx';
 import { useAuth } from '@/context/AuthContext.tsx';
 import { getNavRole } from '@/utils/roles';
+import InstallBanner from '../pwa/InstallBanner.tsx';
+import UpdateToast from '../pwa/UpdateToast.tsx';
 
 interface AppShellProps { children: React.ReactNode; }
 
@@ -184,6 +186,9 @@ function ShellBody({ children }: AppShellProps) {
       </div>
       <BannerTrigger />
       <TourOverlay />
+      <InstallBanner />
+      <UpdateToast />
+
       <TourButton role={role} />
       <TourBanner role={role} />
     </div>

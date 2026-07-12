@@ -22,7 +22,7 @@ interface AppDataContextValue {
   setLaundryServices: (v: LaundryService[]) => void;
   notifications: AppNotification[];
   unreadCount: number;
-  markNotificationRead: (id: number) => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   loadNotifications: () => Promise<void>;
   usageData: UsageStats;
@@ -80,7 +80,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     loadUsage();
   }, [loadPricing, loadNotifications, loadUsage]);
 
-  const markNotificationRead = useCallback(async (id: number) => {
+  const markNotificationRead = useCallback(async (id: string) => {
     try { await notificationService.markRead(id); } catch { /* ignore */ }
     setNotifications(p => p.map(n => n.id === id ? { ...n, is_read: true } : n));
     setUnreadCount(p => Math.max(0, p - 1));

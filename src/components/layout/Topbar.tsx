@@ -375,6 +375,7 @@ import { useTour } from '@/context/TourContext.tsx';
 import { getNavRole } from '@/utils/roles.ts';
 import { useIsNarrowViewport } from '@/hooks/useIsNarrowViewport.ts';
 import type { AppNotification } from '@/types/index.ts';
+import { usePWAInstall } from '@/hooks/usePWAInstall.ts';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard', '/orders': 'My Orders', '/orders/new': 'Create Order',
@@ -452,13 +453,23 @@ function NotifDropdown({ notifications, unreadCount, onRead, onReadAll, onClose 
   );
 }
 
+// function ProfileDropdown({ name, email, role, onSignOut, onReplayTour, onClose }: {
+//   name: string; email: string; role: string;
+//   onSignOut: () => void; onReplayTour: () => void; onClose: () => void;
+// }) {
+//   const navigate = useNavigate();
+//   const style = useDropdownStyle(220);
+//   const go = (p: string) => { navigate(p); onClose(); };
+// v2
 function ProfileDropdown({ name, email, role, onSignOut, onReplayTour, onClose }: {
   name: string; email: string; role: string;
   onSignOut: () => void; onReplayTour: () => void; onClose: () => void;
 }) {
   const navigate = useNavigate();
   const style = useDropdownStyle(220);
+  const { canInstall, isIosDevice, hasNativePrompt, promptInstall } = usePWAInstall();
   const go = (p: string) => { navigate(p); onClose(); };
+  
   const links = [
     { icon: 'fa-gauge', label: 'Dashboard', path: '/dashboard' },
     { icon: 'fa-box', label: 'My Orders', path: '/orders' },
@@ -500,6 +511,29 @@ function ProfileDropdown({ name, email, role, onSignOut, onReplayTour, onClose }
           <i className="fas fa-route text-muted" style={{ width: 16, fontSize: 12 }} />Replay Walkthrough
         </button>
       </div>
+
+      {canInstall && (
+        <>
+
+        {console.log(canInstall)}
+
+        <div className="border-top py-1">
+          <button
+            className="btn btn-link w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark"
+            style={{ fontSize: 13, borderRadius: 0 }}
+            onClick={async () => {
+              if (isIosDevice && !hasNativePrompt) { /* the InstallBanner's iOS modal handles this path already if the banner is dismissed — for the profile menu entry, just re-show the banner logic or a lightweight alert */ }
+              else await promptInstall();
+              onClose();
+            }}
+          >
+            <i className="fas fa-mobile-screen-button text-muted" style={{ width: 16, fontSize: 12 }} />Install App
+          </button>
+        </div>
+      
+      </>
+      )}
+
       <div className="border-top py-1">
         <button
           className="btn btn-link w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-danger"
@@ -507,6 +541,7 @@ function ProfileDropdown({ name, email, role, onSignOut, onReplayTour, onClose }
           <i className="fas fa-sign-out-alt" style={{ width: 16, fontSize: 12 }} />Sign Out
         </button>
       </div>
+      
     </div>
   );
 }
