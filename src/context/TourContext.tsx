@@ -262,3 +262,8 @@ export function useTour() {
 export function hasTourCompleted(role: NavRole): boolean {
   try { return localStorage.getItem(completedKey(role)) === '1'; } catch { return false; }
 }
+
+// TourContext.tsx — add alongside hasTourCompleted
+export function hasTourBannerBeenSeen(role: NavRole): boolean {
+  try { return localStorage.getItem(bannerSeenKey(role)) === '1'; } catch { return false; }
+}

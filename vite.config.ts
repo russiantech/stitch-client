@@ -113,7 +113,8 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: false, // avoid SW interfering with Vite's dev HMR
+        // enabled: false, // avoid SW interfering with Vite's dev HMR
+        enabled: true, // avoid SW interfering with Vite's dev HMR
       },
     }),
   ],
