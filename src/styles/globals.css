@@ -580,6 +580,20 @@ h1, h2, h3, h4, h5, h6 {
   background-clip: text;
 }
 
+/* for the hover effects and transitions */
+.hover-shadow {
+  transition: all 0.2s ease;
+}
+.hover-shadow:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #dee2e6 !important;
+  transform: translateY(-1px);
+}
+
+.transition-all {
+  transition: all 0.2s ease;
+}
+
 /* Nav tabs override */
 .nav-tabs .nav-link { color: var(--text-muted); font-weight: 500; }
 .nav-tabs .nav-link.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }

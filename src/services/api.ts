@@ -44,7 +44,6 @@ const getApiUrl = (): string => {
 };
 
 export const API_URL = getApiUrl();
-export const PAYSTACK_KEY: string = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxxxxxxxxxxxxx';
 
 const getAuthHeaders = (json = false): Record<string, string> => {
   const token = localStorage.getItem('access_token');
