@@ -690,7 +690,7 @@
 
 
 
-// v2
+
 // v2 — Improved UX & Visual Hierarchy
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -1002,13 +1002,13 @@ export default function CreateOrder() {
                 style={{ cursor: 'pointer' }} 
                 onClick={() => toggleService(svc.id)}
               >
-                <div 
-                  className={`d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 ${sel ? 'bg-white bg-opacity-25' : 'bg-primary bg-opacity-10'}`}
+                <div className={`d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 ${sel ? 'bg-white bg-opacity-25' : 'bg-primary bg-opacity-10'}`}
                   style={{ width: 44, height: 44 }}
                 >
-                  <i className={`fas ${svc.icon || 'fa-soap'} ${sel ? 'text-white' : 'text-primary'}`} />
+                  <i className={`fas ${svc.icon || 'fa-soap'} ${sel ? 'text-white' : 'text-white'}`} />
                 </div>
-                <div className="flex-1">
+                
+                <div className="flex-grow-1">
                   <div className={`fw-medium small ${sel ? 'text-white' : 'text-dark'}`}>{svc.name}</div>
                   <div className={`${sel ? 'text-white text-opacity-75' : 'text-muted'}`} style={{ fontSize: 11 }}>{svc.description}</div>
                   <div className={`small fw-medium ${sel ? 'text-white' : 'text-primary'}`}>×{svc.price_multiplier} multiplier</div>
@@ -1046,7 +1046,8 @@ export default function CreateOrder() {
         Add the types and quantities you want cleaned. Prices are set by Stitch and adjusted by your selected service.
       </p>
       <div className="row g-3">
-        {garmentPricing.filter(g => g.is_active !== false).map(garment => {
+
+     {/*    {garmentPricing.filter(g => g.is_active !== false).map(garment => {
           const g = form.garments[garment.id] || { qty: 0 };
           const linePrice = g.qty * garment.base_price * serviceMultiplier;
           return (
@@ -1072,7 +1073,38 @@ export default function CreateOrder() {
               </div>
             </div>
           );
-        })}
+        })} */}
+        {garmentPricing.filter(g => g.is_active !== false).map(garment => {
+  const g = form.garments[garment.id] || { qty: 0 };
+  const linePrice = g.qty * garment.base_price * serviceMultiplier;
+  const sel = g.qty > 0;
+  return (
+    <div key={garment.id} className="col-sm-6 col-lg-4">
+      <div className={`rounded-3 border p-3 h-100 transition-all ${sel ? 'bg-primary border-primary shadow-sm' : 'bg-white border-light hover-shadow'}`}>
+        <div className={`fw-medium small mb-1 ${sel ? 'text-white' : 'text-dark'}`}>{garment.name}</div>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <div className={sel ? 'text-white text-opacity-75' : 'text-muted'} style={{ fontSize: 11 }}>
+            {garment.category} · {garment.unit}
+          </div>
+          <div className={`small fw-medium ${sel ? 'text-white' : 'text-primary'}`}>{formatNGN(garment.base_price)}</div>
+        </div>
+        <div className="d-flex align-items-center gap-2">
+          <button className={`btn btn-xs ${sel ? 'btn-light' : 'btn-outline-secondary'}`}
+            style={{ width: 28, height: 28, padding: 0, borderRadius: 6 }}
+            onClick={() => setGarmentQty(garment.id, -1)}>−</button>
+          <span className={`fw-bold small ${sel ? 'text-white' : 'text-dark'}`} style={{ minWidth: 28, textAlign: 'center' }}>{g.qty}</span>
+          <button className={`btn btn-xs ${sel ? 'btn-light' : 'btn-outline-primary'}`}
+            style={{ width: 28, height: 28, padding: 0, borderRadius: 6 }}
+            onClick={() => setGarmentQty(garment.id, 1)}>+</button>
+          {g.qty > 0 && (
+            <span className={`small ms-1 ${sel ? 'text-white text-opacity-90' : 'text-muted'}`}>{formatNGN(linePrice)}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+})}
+
       </div>
       {totalGarmentCount > 0 && (
         <div className="alert alert-info mt-3 small border-0 bg-info bg-opacity-10 text-info-emphasis">
@@ -1179,7 +1211,7 @@ export default function CreateOrder() {
     </div>
   );
 
-  const renderStep3 = () => (
+const renderStep3 = () => (
     <div>
       <h6 className="fw-semibold mb-3 text-dark">Payment Method</h6>
       <div className="d-flex flex-column gap-3">
@@ -1194,32 +1226,37 @@ export default function CreateOrder() {
               {form.payment_method === 'direct' && <i className="fas fa-check" />}
             </div>
             <div>
-              <div className={`fw-semibold mb-1 ${form.payment_method === 'direct' ? 'text-primary' : 'text-dark'}`}>
-                <i className="fas fa-credit-card text-primary me-2" />Pay with Paystack
+              {/* <div className={`fw-semibold mb-1 ${form.payment_method === 'direct' ? 'text-primary' : 'text-dark'}`}> */}
+                <div className={`fw-semibold mb-1 ${form.payment_method === 'direct' ? 'text-white' : 'text-dark'}`}>
+                {/* <i className="fas fa-credit-card text-primary me-2" />Pay with Paystack */}
+                <i className={`fas fa-credit-card me-2 ${form.payment_method === 'direct' ? 'text-white' : 'text-primary'}`} />Pay with Paystack
               </div>
-              <div className="text-muted small">
+              <div className={`small ${form.payment_method === 'direct' ? 'text-white text-opacity-75' : 'text-muted'}`}>
                 Card, bank transfer, USSD, or Opay/wallet transfer. A secure payment popup appears on confirmation.
               </div>
-              <div className="fw-bold text-primary mt-1">{formatNGN(totalAmount)}</div>
+              {/* <div className="fw-bold text-primary mt-1">{formatNGN(totalAmount)}</div> */}
+              <div className={`fw-bold mt-1 ${form.payment_method === 'direct' ? 'text-white' : 'text-primary'}`}>{formatNGN(totalAmount)}</div>
             </div>
           </div>
         </div>
 
         <div
-          className={`rounded-3 border p-4 transition-all ${form.payment_method === 'subscription' ? 'border-success border-2 shadow-sm bg-success bg-opacity-5' : 'bg-white border-light hover-shadow'} ${subscriptions.length === 0 ? 'opacity-50' : ''}`}
+          className={`rounded-3 border p-4 transition-all ${form.payment_method === 'subscription' ? 'border-primary border-2 shadow-sm bg-primary bg-opacity-5' : 'bg-white border-light hover-shadow'} ${subscriptions.length === 0 ? 'opacity-50' : ''}`}
           style={{ cursor: subscriptions.length > 0 ? 'pointer' : 'not-allowed' }}
           onClick={() => subscriptions.length > 0 && setForm(p => ({ ...p, payment_method: 'subscription' }))}
         >
           <div className="d-flex gap-3 align-items-start">
-            <div className={`d-flex align-items-center justify-content-center flex-shrink-0 ${form.payment_method === 'subscription' ? 'bg-success text-white' : 'border'}`}
+            <div className={`d-flex align-items-center justify-content-center flex-shrink-0 ${form.payment_method === 'subscription' ? 'bg-primary text-white' : 'border'}`}
               style={{ width: 24, height: 24, borderRadius: 8, marginTop: 2, fontSize: 12 }}>
               {form.payment_method === 'subscription' && <i className="fas fa-check" />}
             </div>
-            <div className="flex-1" onClick={e => e.stopPropagation()}>
-              <div className={`fw-semibold mb-1 ${form.payment_method === 'subscription' ? 'text-success' : 'text-dark'}`}>
-                <i className="fas fa-layer-group text-success me-2" />Pay from Subscription
+            <div className="flex-grow-1" onClick={e => e.stopPropagation()}>
+              {/* <div className={`fw-semibold mb-1 ${form.payment_method === 'subscription' ? 'text-success' : 'text-dark'}`}> */}
+                <div className={`fw-semibold mb-1 ${form.payment_method === 'subscription' ? 'text-white' : 'text-dark'}`}>
+                {/* <i className="fas fa-layer-group text-success me-2" />Pay from Subscription */}
+                <i className={`fas fa-layer-group me-2 ${form.payment_method === 'subscription' ? 'text-white' : 'text-primary'}`} />Pay from Subscription
               </div>
-              <div className="text-muted small mb-3">
+              <div className={`small mb-3 ${form.payment_method === 'subscription' ? 'text-white text-opacity-75' : 'text-muted'}`}>
                 Deduct <strong>{totalGarmentCount} unit(s)</strong> from your active plan(s). Split across plans if needed.
               </div>
               {subscriptions.length === 0 ? (
@@ -1232,7 +1269,7 @@ export default function CreateOrder() {
                   <div className="d-flex flex-column gap-2 mb-3">
                     {subscriptions.map(sub => (
                       <div key={sub.id} className="d-flex align-items-center gap-2 p-2 bg-white rounded-2 border border-light">
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-grow-1 min-w-0">
                           <div className="fw-medium small text-dark">{sub.plan_name}</div>
                           <div className="text-muted" style={{ fontSize: 11 }}>{sub.units_remaining} units available</div>
                         </div>
@@ -1246,11 +1283,14 @@ export default function CreateOrder() {
                       </div>
                     ))}
                   </div>
-                  <button className="btn btn-outline-success btn-sm mb-3" onClick={e => { e.stopPropagation(); autoAllocate(); }}>
+
+                  <button className={`btn btn-sm mb-3 ${form.payment_method === 'subscription' ? 'btn-light' : 'btn-outline-success'}`} 
+                    onClick={ e => { e.stopPropagation(); autoAllocate(); }}>
                     <i className="fas fa-magic me-2" />Auto-fill {totalGarmentCount} units
                   </button>
+
                   {totalAllocated > 0 && (
-                    <div className={`rounded-2 p-2 small ${allocationOk ? 'bg-success text-white' : 'bg-danger text-white'}`}>
+                    <div className={`rounded-2 p-2 small ${allocationOk ? 'bg-white text-primary' : 'bg-danger text-white'}`}>
                       {allocationOk
                         ? <><i className="fas fa-check-circle me-1" />{totalAllocated} units across {Object.values(subAllocations).filter(v => v > 0).length} plan(s) — ready!</>
                         : <><i className="fas fa-exclamation-circle me-1" />Need {totalGarmentCount}, allocated {totalAllocated} — {totalGarmentCount - totalAllocated} more needed</>}
@@ -1264,6 +1304,8 @@ export default function CreateOrder() {
       </div>
     </div>
   );
+ 
+
 
   const renderStep4 = () => {
     const planNames = Object.entries(subAllocations)
@@ -1361,7 +1403,7 @@ export default function CreateOrder() {
               </div>
               <span className={`small d-none d-md-inline ${i === step ? 'fw-semibold text-primary' : 'text-muted'}`}>{s}</span>
             </div>
-            {i < STEPS.length - 1 && <div className={`flex-1 mx-1 ${i < step ? 'bg-success' : 'bg-light'}`} style={{ height: 2 }} />}
+            {i < STEPS.length - 1 && <div className={`flex-grow-1 mx-1 ${i < step ? 'bg-success' : 'bg-light'}`} style={{ height: 2 }} />}
           </React.Fragment>
         ))}
       </div>
