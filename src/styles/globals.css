@@ -57,14 +57,46 @@
 }
 
 /* Ensure Bootstrap btn-primary uses brand colour */
-.btn-primary  { --bs-btn-bg: var(--primary); --bs-btn-border-color: var(--primary); --bs-btn-hover-bg: var(--primary-dark); --bs-btn-hover-border-color: var(--primary-dark); --bs-btn-active-bg: var(--primary-dark); }
-.btn-outline-primary { --bs-btn-color: var(--primary); --bs-btn-border-color: var(--primary); --bs-btn-hover-bg: var(--primary); --bs-btn-hover-border-color: var(--primary); }
+.btn-primary  { 
+  --bs-btn-bg: var(--primary); 
+  --bs-btn-border-color: var(--primary); 
+  --bs-btn-hover-bg: var(--primary-dark); 
+  --bs-btn-hover-border-color: var(--primary-dark); 
+  --bs-btn-active-bg: var(--primary-dark); 
+}
+
+.btn-outline-primary { 
+  --bs-btn-color: var(--primary); 
+  --bs-btn-border-color: var(--primary); 
+  --bs-btn-hover-bg: var(--primary); 
+  --bs-btn-hover-border-color: var(--primary); 
+}
+
 .text-primary  { color: var(--primary) !important; }
 .bg-primary    { background-color: var(--primary) !important; }
 .border-primary { border-color: var(--primary) !important; }
 .badge.bg-primary { background-color: var(--primary) !important; }
 a { color: var(--primary); }
 a:hover { color: var(--primary-dark); }
+
+/* ─── Contrast fix: primary background forces white text/icons ─────────────── */
+.bg-primary,
+.bg-primary .text-primary,
+.bg-primary i,
+.bg-primary .fas,
+.bg-primary .far,
+.bg-primary .fab,
+.bg-primary .icon,
+.badge.bg-primary,
+.btn-primary .text-primary {
+  color: #ffffff !important;
+}
+
+/* Bootstrap 5.3-style combined utility (recommended replacement) */
+.text-bg-primary {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+}
 
 /* ─── Reset ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
