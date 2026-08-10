@@ -575,9 +575,19 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       <button className="btn btn-sm btn-outline-secondary d-lg-none" onClick={onMenuClick}>
         <i className="fas fa-bars" />
       </button>
-      <div className="me-auto">
+      {/* <div className="me-auto">
         <h6 className="mb-0 fw-semibold" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h6>
-      </div>
+      </div> */}
+      {/* // Topbar.tsx — add near the title */}
+    <div className="me-auto d-flex align-items-center gap-2">
+      <h6 className="mb-0 fw-semibold" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h6>
+      {user?.organization?.name && (
+        <span className="badge bg-primary-subtle text-primary border d-none1 d-md-inline-flex align-items-center gap-1" style={{ fontSize: 11 }}>
+          <i className="fas fa-building" style={{ fontSize: 9}} />{user.organization.name}
+        </span>
+      )}
+    </div>
+
       <div className="d-flex align-items-center gap-2">
         {/* Notifications */}
         <div ref={notifsRef} style={{ position: 'relative' }}>

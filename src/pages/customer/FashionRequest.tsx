@@ -130,18 +130,18 @@ export default function FashionRequest() {
           <h6 className="fw-semibold mb-3">What service do you need?</h6>
           <div className="d-flex flex-column gap-2">
             {FASHION_SERVICES.map(svc => (
-              <div
-                key={svc.id}
-                className={`bg-white rounded-3 border p-3 d-flex align-items-center gap-3 ${form.service?.id === svc.id ? 'border-primary border-2 bg-primary bg-opacity-10' : ''}`}
+              <div key={svc.id}
+                className={`bg-white rounded-3 border p-3 d-flex align-items-center gap-3 
+                ${form.service?.id === svc.id ? 'border-primary border-2 bg-primary bg-opacity-10' : ''}`}
                 style={{ cursor: 'pointer' }}
                 onClick={() => setForm(p => ({ ...p, service: svc }))}
               >
                 <div className="stat-icon bg-info bg-opacity-10 flex-shrink-0" style={{ width: 44, height: 44 }}>
-                  <i className={`fas ${svc.icon} text-info`} />
+                  <i className={`fas ${svc.icon} text-primary-subtle`} />
                 </div>
                 <div className="flex-1">
                   <div className="fw-medium small">{svc.name}</div>
-                  <div className="text-muted" style={{ fontSize: 11 }}>{svc.desc}</div>
+                  <div className="text-subtle" style={{ fontSize: 11 }}>{svc.desc}</div>
                 </div>
                 {form.service?.id === svc.id && <i className="fas fa-check-circle text-primary" />}
               </div>

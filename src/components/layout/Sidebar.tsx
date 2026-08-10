@@ -101,16 +101,10 @@ export default function Sidebar({ show, onClose }: { show: boolean; onClose: () 
           </div>
         </div>
         <nav className="py-2" style={{ flex:1, overflowY:'auto' }}>
-          {navItems.map((item, i) => {
+          {/* {navItems.map((item, i) => {
             if (item.section) return <div key={i} className="nav-section-label">{item.label}</div>;
             return (
               <>
-              {/* <NavLink key={`${item.to}-${i}`} to={item.to!} onClick={onClose}
-                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-                end={item.to === '/dashboard' || item.to === '/ops'}>
-                <i className={`fas ${item.icon}`} />{item.label}
-              </NavLink> */}
-
               <NavLink
                 key={`${item.to}-${i}`}
                 to={item.to!}
@@ -123,7 +117,33 @@ export default function Sidebar({ show, onClose }: { show: boolean; onClose: () 
               </NavLink>
               </>
             );
+          })} */}
+          {/* v2 */}
+          {navItems.map((item, i) => {
+            if (item.section) return <div key={i} className="nav-section-label">{item.label}</div>;
+
+            // A link should only match exactly (not prefix-match) when some OTHER
+            // link in this same nav set starts with its path — otherwise a parent
+            // route like /driver stays highlighted alongside its own children like
+            // /driver/pickups. Top-level dashboard-style routes need this too.
+            const isParentOfSibling = navItems.some(
+              other => other.to && other.to !== item.to && other.to.startsWith(item.to + '/')
+            );
+
+            return (
+              <NavLink
+                key={`${item.to}-${i}`}
+                to={item.to!}
+                data-tour={`nav-${item.to}`}
+                onClick={onClose}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                end={isParentOfSibling}
+              >
+                <i className={`fas ${item.icon}`} />{item.label}
+              </NavLink>
+            );
           })}
+
         </nav>
         <div className="p-3 border-top">
           <button data-tour="sidebar-logout" className="btn btn-outline-danger btn-sm w-100" onClick={handleSignOut}>

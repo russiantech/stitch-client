@@ -1043,6 +1043,20 @@ export type PaymentStatus = 'pending' | 'success' | 'failed' | 'abandoned' | 're
 export type PaymentProvider = 'paystack' | 'manual' | 'cash';
 export type PaymentPurpose = 'subscription' | 'order' | 'invoice' | 'top_up';
 
+// export interface Payment {
+//   id: string;
+//   reference: string;
+//   provider: PaymentProvider;
+//   purpose: PaymentPurpose;
+//   status: PaymentStatus;
+//   currency: string;
+//   amount: number;
+//   amount_paid: number | null;
+//   channel: string | null;
+//   paid_at: string | null;
+//   created_at: string;
+// }
+// 
 export interface Payment {
   id: string;
   reference: string;
@@ -1055,6 +1069,8 @@ export interface Payment {
   channel: string | null;
   paid_at: string | null;
   created_at: string;
+  customer_name?: string | null;
+  customer_email?: string | null;
 }
 
 export interface PaymentInitResult {

@@ -229,8 +229,16 @@ export default function Billing() {
 
   useEffect(() => { loadPayments(); }, [loadPayments]);
 
-  const totalCollected = payments.filter(p => p.status === 'success').reduce((s, p) => s + (p.amount_paid || p.amount), 0);
-  const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0);
+  // const totalCollected = payments.filter(p => p.status === 'success').reduce((s, p) => s + (p.amount_paid || p.amount), 0);
+  // const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0);
+  // 
+  const toNum = (v: unknown): number => {
+  const n = typeof v === 'string' ? parseFloat(v) : v;
+  return typeof n === 'number' && !Number.isNaN(n) ? n : 0;
+  };
+
+  const totalCollected = payments.filter(p => p.status === 'success').reduce((s, p) => s + toNum(p.amount_paid ?? p.amount), 0);
+  const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + toNum(p.amount), 0);
 
   const updatePayment = (updated: Payment) => setPayments(prev => prev.map(p => p.id === updated.id ? updated : p));
 
@@ -283,6 +291,7 @@ export default function Billing() {
             <table className="table mb-0">
               <thead>
                 <tr>
+                  <th className="small fw-medium text-muted">Customer</th>
                   <th className="ps-4 small fw-medium text-muted">Reference</th>
                   <th className="small fw-medium text-muted">Purpose</th>
                   <th className="small fw-medium text-muted">Provider</th>
@@ -298,6 +307,11 @@ export default function Billing() {
                   <tr><td colSpan={8}><EmptyState icon="fa-receipt" title="No payments found" /></td></tr>
                 ) : payments.map(pay => (
                   <tr key={pay.id}>
+                    <td>
+                      <div className="small fw-medium">{pay.customer_name || '—'}</div>
+                      <div className="text-muted" style={{ fontSize: 11 }}>{pay.customer_email || ''}</div>
+                    </td>
+
                     <td className="ps-4 fw-medium small">{pay.reference}</td>
                     <td className="small text-capitalize">{pay.purpose}</td>
                     <td className="small text-muted text-capitalize">{pay.provider}</td>

@@ -43,7 +43,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [usageData, setUsageData] = useState<UsageStats>(EMPTY_USAGE);
   const [pricingLoaded, setPricingLoaded] = useState(false);
 
-  const loadPricing = useCallback(async () => {
+  /* const loadPricing = useCallback(async () => {
     try {
       const [areas, garments, servicesList] = await Promise.allSettled([
         pricingService.areas(),
@@ -56,7 +56,31 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setPricingLoaded(true);
     }
-  }, []);
+  }, []); */
+  
+  // 
+  const loadPricing = useCallback(async (isRetry = false) => {
+  try {
+    const [areas, garments, servicesList] = await Promise.allSettled([
+      pricingService.areas(),
+      pricingService.garments(),
+      pricingService.services(),
+    ]);
+    if (areas.status === 'fulfilled') setDeliveryAreas(areas.value);
+    if (garments.status === 'fulfilled') setGarmentPricing(garments.value);
+    if (servicesList.status === 'fulfilled') setLaundryServices(servicesList.value);
+
+    // If everything failed (likely a cold-start timeout) and this wasn't
+    // already a retry, try once more after a short delay.
+    const allFailed = [areas, garments, servicesList].every(r => r.status === 'rejected');
+    if (allFailed && !isRetry) {
+      setTimeout(() => loadPricing(true), 1500);
+      return;
+    }
+  } finally {
+    setPricingLoaded(true);
+  }
+}, []);
 
   const loadNotifications = useCallback(async () => {
     try {

@@ -1115,7 +1115,7 @@ export default function CreateOrder() {
       )}
       <div className="mt-4">
         <label className="form-label small fw-medium text-dark">Special Instructions</label>
-        <textarea className="form-control border-light" rows={3}
+        <textarea className="form-control border-secondary-subtle" rows={3}
           placeholder="e.g. Handle delicates carefully, no bleach on coloured items…"
           value={form.special_instructions}
           onChange={e => setForm(p => ({ ...p, special_instructions: e.target.value }))} />
@@ -1393,7 +1393,7 @@ const renderStep3 = () => (
         subtitle={actingOnBehalf ? `Acting on behalf of ${behalfName}. Order will be attributed to their account.` : 'Select services, garments and schedule a pickup'}
       />
 
-      <div className="d-flex align-items-center mb-5" data-tour="tour-order-steps">
+      {/* <div className="d-flex align-items-center mb-5" data-tour="tour-order-steps">
         {STEPS.map((s, i) => (
           <React.Fragment key={s}>
             <div className="d-flex align-items-center gap-2 flex-shrink-0">
@@ -1406,7 +1406,31 @@ const renderStep3 = () => (
             {i < STEPS.length - 1 && <div className={`flex-grow-1 mx-1 ${i < step ? 'bg-success' : 'bg-light'}`} style={{ height: 2 }} />}
           </React.Fragment>
         ))}
-      </div>
+      </div> */}
+
+      {/* // CreateOrder.tsx — replace the step-indicator block */}
+      {/* 
+      Deliberately only allows jumping backward to a completed step (not forward, skipping validation) — 
+      this satisfies "directly clickable to navigate/edit a section" without letting someone bypass required fields.
+      */}
+    <div className="d-flex align-items-center mb-5" data-tour="tour-order-steps">
+      {STEPS.map((s, i) => (
+        <React.Fragment key={s}>
+          <div
+            className="d-flex align-items-center gap-2 flex-shrink-0"
+            style={{ cursor: i <= step || i === step + 1 ? 'pointer' : 'default' }}
+            onClick={() => { if (i < step) setStep(i); }} // only allow going BACK freely; forward still gated by canProceed()
+          >
+            <div className={`d-flex align-items-center justify-content-center rounded-circle fw-bold ${i < step ? 'bg-success text-white' : i === step ? 'bg-primary text-white' : 'bg-light text-muted border'}`}
+              style={{ width: 30, height: 30, fontSize: 12 }}>
+              {i < step ? <i className="fas fa-check" style={{ fontSize: 10 }} /> : i + 1}
+            </div>
+            <span className={`small d-none d-md-inline ${i === step ? 'fw-semibold text-primary' : 'text-muted'}`}>{s}</span>
+          </div>
+          {i < STEPS.length - 1 && <div className={`flex-1 mx-1 ${i < step ? 'bg-success' : 'bg-light'}`} style={{ height: 2 }} />}
+        </React.Fragment>
+      ))}
+    </div>
 
       {stepContent[step]()}
 

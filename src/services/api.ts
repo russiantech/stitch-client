@@ -313,10 +313,18 @@ export const usageService = {
 
 // ─── ORDERS (doubled prefix for /orders..., NOT doubled for /fashion-orders) ──
 export const orderService = {
-  list: (params?: {
+  list1: (params?: {
     page?: number; page_size?: number; order_type?: 'laundry' | 'fashion';
     status?: string; priority?: string; search?: string;
+    assigned_driver_id?: string; delivery_date?: string; pickup_date?: string;
   }) => unwrap<ListPage<LaundryOrder | FashionOrder>>(`/orders${qs(params)}`),
+
+  // api.ts — orderService.list params type
+  list: (params?: {
+    page?: number; page_size?: number; order_type?: 'laundry' | 'fashion';
+    status?: string; priority?: string; search?: string; assigned_driver_id?: string;
+  }) => unwrap<ListPage<LaundryOrder | FashionOrder>>(`/orders${qs(params)}`),
+
   get: (id: number) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}`),
   create: (data: LaundryOrderCreatePayload) => unwrap<OrderCreateResult>('/orders', { method: 'POST', json: data }),
   createFashion: (data: FashionOrderCreatePayload) => unwrap<OrderCreateResult>('/orders/fashion-orders', { method: 'POST', json: data }),
