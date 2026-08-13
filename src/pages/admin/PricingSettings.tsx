@@ -1,10 +1,13 @@
+
+// v2 - 
+// src/pages/admin/PricingSettings.tsx
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from '@/components/shared/index.tsx';
 import { pricingService } from '@/services/api.ts';
 import { formatNGN } from '@/services/mockData.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import { useAppData } from '@/context/AppDataContext.tsx';
-import type { GarmentType, LaundryService, DeliveryArea } from '@/types/index.ts';
+import type { GarmentType, LaundryService, DeliveryArea, FashionServiceRow } from '@/types/index.ts';
 
 const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
 
@@ -136,7 +139,7 @@ function AddRowForm<T extends WithId>({ fields, onAdd, onCancel }: {
       <td className="py-1 px-2">
         <div className="d-flex gap-1">
           <button className="btn btn-xs btn-success" style={{ fontSize: 11, padding: '2px 8px' }}
-            onClick={() => onAdd({ ...form, is_active: (form as Record<string, unknown>).is_active !== false } as Partial<T>)}>
+            onClick={() => onAdd(form)}>
             <i className="fas fa-plus" />
           </button>
           <button className="btn btn-xs btn-outline-secondary" style={{ fontSize: 11, padding: '2px 8px' }} onClick={onCancel}>
@@ -195,9 +198,9 @@ function PricingTable<T extends WithId>({ title, items, setItems, fields, create
   };
 
   return (
-    <div className="bg-white rounded-3 border overflow-hidden mb-4">
-      <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
-        <h6 className="fw-semibold mb-0">{title}</h6>
+    <div className="bg-white rounded-3 border border-light shadow-sm overflow-hidden mb-4">
+      <div className="d-flex align-items-center justify-content-between p-3 border-bottom border-light">
+        <h6 className="fw-semibold mb-0 text-dark">{title}</h6>
         <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
           <i className={`fas ${showAdd ? 'fa-times' : 'fa-plus'} me-1`} />
           {showAdd ? 'Cancel' : 'Add'}
@@ -229,13 +232,511 @@ function PricingTable<T extends WithId>({ title, items, setItems, fields, create
   );
 }
 
+// ─── Fashion Fees Panel (singleton config — not a list) ────────────────────────
+/*
+function FashionFeesPanel() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    consultation_fee: 3000,
+    material_pickup_fee: 2500,
+    consultation_fee_enabled: true,
+    material_pickup_fee_enabled: true,
+  });
+
+  useEffect(() => {
+    setLoading(true);
+    pricingService.fashionFees()
+      .then(data => {
+        setForm({
+          consultation_fee: data.consultation_fee ?? 3000,
+          material_pickup_fee: data.material_pickup_fee ?? 2500,
+          consultation_fee_enabled: data.consultation_fee_enabled ?? true,
+          material_pickup_fee_enabled: data.material_pickup_fee_enabled ?? true,
+        });
+      })
+      .catch(err => toast.error(errMsg(err)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await pricingService.updateFashionFees({
+        consultation_fee: Number(form.consultation_fee),
+        material_pickup_fee: Number(form.material_pickup_fee),
+        consultation_fee_enabled: form.consultation_fee_enabled,
+        material_pickup_fee_enabled: form.material_pickup_fee_enabled,
+      });
+      toast.success('Fashion fees updated successfully');
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3 border border-light shadow-sm p-5 text-center">
+        <span className="spinner-border spinner-border-sm text-primary me-2" />
+        <span className="text-muted small">Loading fee settings…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-3 border border-light shadow-sm p-4" style={{ maxWidth: 560 }}>
+      <h6 className="fw-semibold mb-1 text-dark">Fashion Service Fees</h6>
+      <p className="text-muted small mb-4">
+        Configure consultation and material-pickup fees for fashion requests. These apply to all fashion orders in your organization.
+      </p>
+
+      <div className="mb-4">
+        <label className="form-label small fw-medium text-dark">Consultation Fee</label>
+        <div className="input-group input-group-sm">
+          <span className="input-group-text bg-light border-light">₦</span>
+          <input
+            type="number"
+            className="form-control border-light"
+            min={0}
+            step={50}
+            value={form.consultation_fee}
+            onChange={e => setForm(p => ({ ...p, consultation_fee: Number(e.target.value) }))}
+          />
+        </div>
+        <div className="form-check mt-2">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="consultation-enabled"
+            checked={form.consultation_fee_enabled}
+            onChange={e => setForm(p => ({ ...p, consultation_fee_enabled: e.target.checked }))}
+          />
+          <label className="form-check-label small text-muted" htmlFor="consultation-enabled">
+            Enable consultation fee
+          </label>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="form-label small fw-medium text-dark">Material Pickup Fee</label>
+        <div className="input-group input-group-sm">
+          <span className="input-group-text bg-light border-light">₦</span>
+          <input
+            type="number"
+            className="form-control border-light"
+            min={0}
+            step={50}
+            value={form.material_pickup_fee}
+            onChange={e => setForm(p => ({ ...p, material_pickup_fee: Number(e.target.value) }))}
+          />
+        </div>
+        <div className="form-check mt-2">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="pickup-enabled"
+            checked={form.material_pickup_fee_enabled}
+            onChange={e => setForm(p => ({ ...p, material_pickup_fee_enabled: e.target.checked }))}
+          />
+          <label className="form-check-label small text-muted" htmlFor="pickup-enabled">
+            Enable material pickup fee
+          </label>
+        </div>
+      </div>
+
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+        {saving
+          ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+          : <><i className="fas fa-save me-2" />Save Changes</>}
+      </button>
+    </div>
+  );
+}
+*/
+// v2
+function FashionFeesPanel() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [availableServices, setAvailableServices] = useState<FashionServiceRow[]>([]);
+  const [form, setForm] = useState({
+    consultation_fee: 3000,
+    material_pickup_fee: 2500,
+    consultation_fee_enabled: true,
+    material_pickup_fee_enabled: true,
+    consultation_applies_to: null as string[] | null,
+    material_pickup_applies_to: null as string[] | null,
+  });
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      pricingService.fashionFees(),
+      pricingService.fashionServices(),
+    ]).then(([data, services]) => {
+      setForm({
+        consultation_fee: data.consultation_fee ?? 3000,
+        material_pickup_fee: data.material_pickup_fee ?? 2500,
+        consultation_fee_enabled: data.consultation_fee_enabled ?? true,
+        material_pickup_fee_enabled: data.material_pickup_fee_enabled ?? true,
+        consultation_applies_to: data.consultation_applies_to ?? null,
+        material_pickup_applies_to: data.material_pickup_applies_to ?? null,
+      });
+      setAvailableServices(services);
+    })
+      .catch(err => toast.error(errMsg(err)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggleAppliesTo = (field: 'consultation_applies_to' | 'material_pickup_applies_to', serviceName: string) => {
+    setForm(p => {
+      const current = p[field] ?? availableServices.map(s => s.name); // null = "applies to all" → expand to the full list on first toggle
+      const next = current.includes(serviceName) ? current.filter(s => s !== serviceName) : [...current, serviceName];
+      return { ...p, [field]: next };
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await pricingService.updateFashionFees({
+        consultation_fee: Number(form.consultation_fee),
+        material_pickup_fee: Number(form.material_pickup_fee),
+        consultation_fee_enabled: form.consultation_fee_enabled,
+        material_pickup_fee_enabled: form.material_pickup_fee_enabled,
+        consultation_applies_to: form.consultation_applies_to,
+        material_pickup_applies_to: form.material_pickup_applies_to,
+      });
+      toast.success('Fashion fees updated successfully');
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3 border border-light shadow-sm p-5 text-center">
+        <span className="spinner-border spinner-border-sm text-primary me-2" />
+        <span className="text-muted small">Loading fee settings…</span>
+      </div>
+    );
+  }
+
+  const AppliesToRow = ({ field, disabled }: { field: 'consultation_applies_to' | 'material_pickup_applies_to'; disabled: boolean }) => {
+    const value = form[field];
+    return (
+      <div className="mt-2">
+        <div className="text-muted small mb-1">Applies to:</div>
+        <div className="d-flex flex-wrap gap-2">
+          {availableServices.map(s => (
+            <label key={s.id} className="d-flex align-items-center gap-1 small" style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+              <input
+                type="checkbox"
+                checked={!value || value.includes(s.name)}
+                onChange={() => toggleAppliesTo(field, s.name)}
+                disabled={disabled}
+              />
+              {s.name}
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-3 border border-light shadow-sm p-4" style={{ maxWidth: 640 }}>
+      <h6 className="fw-semibold mb-1 text-dark">Fashion Service Fees</h6>
+      <p className="text-muted small mb-4">
+        Configure consultation and material-pickup fees for fashion requests, and choose which services they apply to.
+      </p>
+
+      <div className="mb-4">
+        <label className="form-label small fw-medium text-dark">Consultation Fee</label>
+        <div className="input-group input-group-sm">
+          <span className="input-group-text bg-light border-light">₦</span>
+          <input
+            type="number" className="form-control border-light" min={0} step={50}
+            value={form.consultation_fee}
+            onChange={e => setForm(p => ({ ...p, consultation_fee: Number(e.target.value) }))}
+            disabled={!form.consultation_fee_enabled}
+          />
+        </div>
+        <div className="form-check mt-2">
+          <input
+            className="form-check-input" type="checkbox" id="consultation-enabled"
+            checked={form.consultation_fee_enabled}
+            onChange={e => setForm(p => ({ ...p, consultation_fee_enabled: e.target.checked }))}
+          />
+          <label className="form-check-label small text-muted" htmlFor="consultation-enabled">Enable consultation fee</label>
+        </div>
+        {form.consultation_fee_enabled && <AppliesToRow field="consultation_applies_to" disabled={false} />}
+      </div>
+
+      <div className="mb-4">
+        <label className="form-label small fw-medium text-dark">Material Pickup Fee</label>
+        <div className="input-group input-group-sm">
+          <span className="input-group-text bg-light border-light">₦</span>
+          <input
+            type="number" className="form-control border-light" min={0} step={50}
+            value={form.material_pickup_fee}
+            onChange={e => setForm(p => ({ ...p, material_pickup_fee: Number(e.target.value) }))}
+            disabled={!form.material_pickup_fee_enabled}
+          />
+        </div>
+        <div className="form-check mt-2">
+          <input
+            className="form-check-input" type="checkbox" id="pickup-enabled"
+            checked={form.material_pickup_fee_enabled}
+            onChange={e => setForm(p => ({ ...p, material_pickup_fee_enabled: e.target.checked }))}
+          />
+          <label className="form-check-label small text-muted" htmlFor="pickup-enabled">Enable material pickup fee</label>
+        </div>
+        {form.material_pickup_fee_enabled && <AppliesToRow field="material_pickup_applies_to" disabled={false} />}
+      </div>
+
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+        {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : <><i className="fas fa-save me-2" />Save Changes</>}
+      </button>
+    </div>
+  );
+}
+
+// ─── Fashion Services Panel (global defaults + org-specific, with hide/unhide) ──
+
+function FashionServicesPanel({ onServicesChanged }: { onServicesChanged?: () => void }) {
+  const toast = useToast();
+  const [items, setItems] = useState<FashionServiceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', description: '', icon: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', description: '', icon: '' });
+
+  const load = () => {
+    setLoading(true);
+    pricingService.fashionServices(true)
+      .then(setItems)
+      .catch(err => toast.error(errMsg(err)))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const startEdit = (item: FashionServiceRow) => {
+    setEditingId(item.id);
+    setEditForm({ name: item.name, description: item.description || '', icon: item.icon || '' });
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    try {
+      const updated = await pricingService.updateFashionService(id, editForm);
+      setItems(prev => prev.map(i => i.id === id ? { ...i, ...updated } : i));
+      toast.success('Service updated');
+      setEditingId(null);
+      onServicesChanged?.();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!addForm.name.trim()) return toast.error('Service name is required');
+    try {
+      const created = await pricingService.createFashionService(addForm);
+      setItems(prev => [...prev, { ...created, is_global: false }]);
+      toast.success('Service added');
+      setAddForm({ name: '', description: '', icon: '' });
+      setShowAdd(false);
+      onServicesChanged?.();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this service?')) return;
+    try {
+      await pricingService.deleteFashionService(id);
+      setItems(prev => prev.filter(i => i.id !== id));
+      toast.success('Deleted');
+      onServicesChanged?.();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
+  const handleHide = async (id: string) => {
+    try {
+      await pricingService.hideFashionService(id);
+      setItems(prev => prev.map(i => i.id === id ? { ...i, is_active: false } : i));
+      toast.success('Hidden for your organization');
+      onServicesChanged?.();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
+  const handleUnhide = async (id: string) => {
+    try {
+      await pricingService.unhideFashionService(id);
+      setItems(prev => prev.map(i => i.id === id ? { ...i, is_active: true } : i));
+      toast.success('Restored');
+      onServicesChanged?.();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3 border border-light shadow-sm p-5 text-center">
+        <span className="spinner-border spinner-border-sm text-primary me-2" />
+        <span className="text-muted small">Loading fashion services…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-3 border border-light shadow-sm overflow-hidden mb-4">
+      <div className="d-flex align-items-center justify-content-between p-3 border-bottom border-light">
+        <div>
+          <h6 className="fw-semibold mb-0 text-dark">Fashion Services ({items.length})</h6>
+          <div className="text-muted" style={{ fontSize: 11 }}>Platform defaults are shared — hide any you don't offer. Add your own anytime.</div>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
+          <i className={`fas ${showAdd ? 'fa-times' : 'fa-plus'} me-1`} />
+          {showAdd ? 'Cancel' : 'Add Service'}
+        </button>
+      </div>
+      <div className="table-responsive">
+        <table className="table mb-0">
+          <thead>
+            <tr>
+              <th className="ps-3 py-2 small fw-medium text-muted text-uppercase" style={{ letterSpacing: '0.04em', fontSize: 11 }}>Name</th>
+              <th className="py-2 small fw-medium text-muted text-uppercase" style={{ letterSpacing: '0.04em', fontSize: 11 }}>Description</th>
+              <th className="py-2 small fw-medium text-muted text-uppercase" style={{ letterSpacing: '0.04em', fontSize: 11 }}>Icon</th>
+              <th className="py-2 small fw-medium text-muted text-uppercase" style={{ letterSpacing: '0.04em', fontSize: 11 }}>Source</th>
+              <th className="py-2 small fw-medium text-muted text-uppercase" style={{ letterSpacing: '0.04em', fontSize: 11 }}>Status</th>
+              <th className="py-2 small fw-medium text-muted" style={{ fontSize: 11 }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {showAdd && (
+              <tr className="table-success">
+                <td className="py-1 px-2">
+                  <input className="form-control form-control-sm" placeholder="e.g. Shoe Repair"
+                    value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} />
+                </td>
+                <td className="py-1 px-2">
+                  <input className="form-control form-control-sm" placeholder="Brief description"
+                    value={addForm.description} onChange={e => setAddForm(p => ({ ...p, description: e.target.value }))} />
+                </td>
+                <td className="py-1 px-2">
+                  <input className="form-control form-control-sm" placeholder="fa-shirt"
+                    value={addForm.icon} onChange={e => setAddForm(p => ({ ...p, icon: e.target.value }))} />
+                </td>
+                <td className="py-1 px-2 small text-muted">Your org</td>
+                <td className="py-1 px-2" />
+                <td className="py-1 px-2">
+                  <div className="d-flex gap-1">
+                    <button className="btn btn-xs btn-success" style={{ fontSize: 11, padding: '2px 8px' }} onClick={handleAdd}>
+                      <i className="fas fa-plus" />
+                    </button>
+                    <button className="btn btn-xs btn-outline-secondary" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => setShowAdd(false)}>
+                      <i className="fas fa-times" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {items.map(item => {
+              const isEditing = editingId === item.id;
+              return (
+                <tr key={item.id} className={isEditing ? 'table-warning' : ''}>
+                  <td className="small py-2 px-3">
+                    {isEditing
+                      ? <input className="form-control form-control-sm" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} />
+                      : <span className="fw-medium">{item.name}</span>}
+                  </td>
+                  <td className="small py-2 px-3">
+                    {isEditing
+                      ? <input className="form-control form-control-sm" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} />
+                      : (item.description || '—')}
+                  </td>
+                  <td className="small py-2 px-3">
+                    {isEditing
+                      ? <input className="form-control form-control-sm" value={editForm.icon} onChange={e => setEditForm(p => ({ ...p, icon: e.target.value }))} />
+                      : (item.icon ? <><i className={`fas ${item.icon} me-1 text-primary`} />{item.icon}</> : '—')}
+                  </td>
+                  <td className="small py-2 px-3">
+                    <span className={`badge ${item.is_global ? 'bg-info bg-opacity-25 text-info-emphasis' : 'bg-primary bg-opacity-10 text-primary'}`} style={{ fontSize: 10 }}>
+                      {item.is_global ? 'Platform default' : 'Your org'}
+                    </span>
+                  </td>
+                  <td className="small py-2 px-3">
+                    <span className={`badge ${item.is_active ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 10 }}>
+                      {item.is_active ? 'Active' : 'Hidden'}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3">
+                    {isEditing ? (
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-xs btn-success" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => handleSaveEdit(item.id)}>
+                          <i className="fas fa-check" />
+                        </button>
+                        <button className="btn btn-xs btn-outline-secondary" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => setEditingId(null)}>
+                          <i className="fas fa-times" />
+                        </button>
+                      </div>
+                    ) : item.is_global ? (
+                      <div className="d-flex gap-1">
+                        {item.is_active ? (
+                          <button className="btn btn-xs btn-outline-secondary" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => handleHide(item.id)}>
+                            <i className="fas fa-eye-slash me-1" />Hide
+                          </button>
+                        ) : (
+                          <button className="btn btn-xs btn-outline-success" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => handleUnhide(item.id)}>
+                            <i className="fas fa-eye me-1" />Restore
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-xs btn-outline-warning" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => startEdit(item)}>
+                          <i className="fas fa-edit" />
+                        </button>
+                        <button className="btn btn-xs btn-outline-danger" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => handleDelete(item.id)}>
+                          <i className="fas fa-trash" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Main Pricing Settings Page ────────────────────────────────────────────────
 export default function PricingSettings() {
   const toast = useToast();
   const [garments, setGarments] = useState<GarmentType[]>([]);
   const [services, setServices] = useState<LaundryService[]>([]);
   const [areas, setAreas] = useState<DeliveryArea[]>([]);
-  const [tab, setTab] = useState<'garments' | 'services' | 'areas'>('garments');
+  // const [tab, setTab] = useState<'garments' | 'services' | 'areas' | 'fashion'>('garments');
+  const [tab, setTab] = useState<'garments' | 'services' | 'areas' | 'fashion' | 'fashionServices'>('garments');
 
   useEffect(() => {
     Promise.allSettled([
@@ -272,10 +773,10 @@ export default function PricingSettings() {
     <div>
       <SectionHeader
         title="Pricing Settings"
-        subtitle="Manage garment pricing, service types and delivery area rates"
+        subtitle="Manage garment pricing, service types, delivery area rates and fashion fees"
       />
 
-      <div className="alert alert-info small mb-4">
+      <div className="alert alert-info small border-0 bg-info bg-opacity-10 text-info-emphasis mb-4">
         <i className="fas fa-info-circle me-2" />
         Changes here update pricing visible to customers when they create orders. Click the edit icon on any row to modify, then tick to save.
       </div>
@@ -285,6 +786,8 @@ export default function PricingSettings() {
           { key: 'garments' as const, label: 'Garment Pricing', icon: 'fa-shirt' },
           { key: 'services' as const, label: 'Laundry Services', icon: 'fa-soap' },
           { key: 'areas' as const, label: 'Delivery Areas', icon: 'fa-map-marker-alt' },
+          { key: 'fashionServices' as const, label: 'Fashion Services', icon: 'fa-scissors' },
+          { key: 'fashion' as const, label: 'Fashion Fees', icon: 'fa-user-tie' },
         ].map(t => (
           <li key={t.key} className="nav-item">
             <button className={`nav-link ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
@@ -298,7 +801,7 @@ export default function PricingSettings() {
         <>
           <p className="text-muted small mb-3">
             Set base prices per garment type. Customers select garments and quantities when creating orders.
-            For tougher/dirtier items, the staff can apply a custom price multiplier at order time.
+            For tougher or dirtier items, staff can apply a custom price multiplier at order time.
           </p>
           <PricingTable
             title={`Garment Prices (${garments.length} items)`}
@@ -332,7 +835,7 @@ export default function PricingSettings() {
       {tab === 'areas' && (
         <>
           <p className="text-muted small mb-3">
-            Delivery areas and their flat-rate delivery fees shown to customers when scheduling pickup/delivery.
+            Delivery areas and their flat-rate delivery fees shown to customers when scheduling pickup or delivery.
           </p>
           <PricingTable
             title={`Delivery Areas (${areas.length} areas)`}
@@ -345,6 +848,27 @@ export default function PricingSettings() {
           />
         </>
       )}
+
+      {tab === 'fashionServices' && (
+        <>
+          <p className="text-muted small mb-3">
+            Platform-provided defaults are available to every business — hide any you don't offer.
+            Add your own to extend the list further.
+          </p>
+          <FashionServicesPanel />
+        </>
+      )}
+
+      {tab === 'fashion' && (
+        <>
+          <p className="text-muted small mb-3">
+            Consultation and material-pickup fees are charged per fashion request. Disable a fee to make that service free.
+          </p>
+          <FashionFeesPanel />
+        </>
+      )}
+
     </div>
   );
 }
+

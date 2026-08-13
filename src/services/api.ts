@@ -25,6 +25,9 @@ import type {
   LaundryOrderCreatePayload, FashionOrderCreatePayload, OrderCreateResult,
   DashboardKPIs, RevenueChartPoint, SubscriptionAnalytics,
   SubscriptionInitiateResult, PaymentInitResult, Invoice,
+  FashionService,
+  FashionFees,
+  SignupPayload,
 } from '@/types/index.ts';
 
 // ── Environment ──────────────────────────────────────────────────────────────
@@ -135,17 +138,6 @@ const qs = (params?: Record<string, unknown>): string => {
   return `?${usp.toString()}`;
 };
 
-// ─── AUTH ───────────────────────────────────────────────────────────────────
-
-export interface SignupPayload {
-  username: string;
-  email: string;
-  names?: string;
-  phone?: string;
-  password: string;
-  org_name?: string;
-  org_code?: string;
-}
 
 export const authService = {
   signIn: (identifier: string, password: string) =>
@@ -312,12 +304,12 @@ export const usageService = {
 };
 
 // ─── ORDERS (doubled prefix for /orders..., NOT doubled for /fashion-orders) ──
-export const orderService = {
-  list1: (params?: {
-    page?: number; page_size?: number; order_type?: 'laundry' | 'fashion';
-    status?: string; priority?: string; search?: string;
-    assigned_driver_id?: string; delivery_date?: string; pickup_date?: string;
-  }) => unwrap<ListPage<LaundryOrder | FashionOrder>>(`/orders${qs(params)}`),
+/* export const orderService = {
+  // list1: (params?: {
+  //   page?: number; page_size?: number; order_type?: 'laundry' | 'fashion';
+  //   status?: string; priority?: string; search?: string;
+  //   assigned_driver_id?: string; delivery_date?: string; pickup_date?: string;
+  // }) => unwrap<ListPage<LaundryOrder | FashionOrder>>(`/orders${qs(params)}`),
 
   // api.ts — orderService.list params type
   list: (params?: {
@@ -334,6 +326,35 @@ export const orderService = {
       method: 'PUT', json: { status, notes, is_reversal },
     }),
 };
+ */
+
+// v2
+export const orderService = {
+  list: (params?: {
+    page?: number; page_size?: number; order_type?: 'laundry' | 'fashion';
+    status?: string; priority?: string; search?: string; assigned_driver_id?: string;
+  }) => unwrap<ListPage<LaundryOrder | FashionOrder>>(`/orders${qs(params)}`),
+
+  get: (id: string) => unwrap<LaundryOrder | FashionOrder>(`/orders/${id}`),               // fixed: was number
+  create: (data: LaundryOrderCreatePayload) => unwrap<OrderCreateResult>('/orders', { method: 'POST', json: data }),
+  createFashion: (data: FashionOrderCreatePayload) => unwrap<OrderCreateResult>('/orders/fashion-orders', { method: 'POST', json: data }),
+  update: (id: string, data: Record<string, unknown>) => apiRequest(`/orders/${id}`, { method: 'PUT', json: data }),
+  updateFashion: (id: string, data: Record<string, unknown>) => apiRequest(`/orders/fashion-orders/${id}`, { method: 'PUT', json: data }),  // fixed: was number
+  updateStatus: (id: string, status: string, notes?: string, is_reversal = false) =>
+    unwrap<LaundryOrder | FashionOrder>(`/orders/${id}/status`, { method: 'PUT', json: { status, notes, is_reversal } }),
+
+  // ── Driver self-assignment workflow ──────────────────────────────────
+  availableForDriver: (request_type: 'pickup' | 'delivery') =>
+    unwrap<{ items: (LaundryOrder | FashionOrder)[]; total: number }>(`/orders/driver/available?request_type=${request_type}`),
+  requestAssignment: (orderId: string, request_type: 'pickup' | 'delivery') =>
+    unwrap<{ status: string }>(`/orders/${orderId}/driver-request?request_type=${request_type}`, { method: 'POST' }),
+  listDriverRequests: (status?: string) =>
+    unwrap<Array<{ id: string; order_id: string; order_reference: string; driver_id: string; driver_name: string; request_type: string; status: string; created_at: string }>>(`/orders/driver-requests${status ? `?status=${status}` : ''}`),
+  reviewDriverRequest: (requestId: string, decision: 'approve' | 'reject') =>
+    unwrap<{ status: string }>(`/orders/driver-requests/${requestId}/${decision}`, { method: 'POST' }),
+};
+
+// Fashion order status update endpoint is in orders.py, not here, because it needs to be part of the same transaction as the order status history record and notification dispatch.
 
 // ─── PAYMENTS (prefix "/payments", routes are "/pays*" and "/invoices") ──────
 export const paymentService = {
@@ -365,7 +386,45 @@ export const pricingService = {
   createArea: (d: Partial<DeliveryArea> & { name: string; price: number }) => unwrap<DeliveryArea>('/pricing/areas', { method: 'POST', json: d }),
   updateArea: (id: string, d: Partial<DeliveryArea>) => unwrap<DeliveryArea>(`/pricing/areas/${id}`, { method: 'PUT', json: d }),
   deleteArea: (id: string) => apiRequest(`/pricing/areas/${id}`, { method: 'DELETE' }),
+
+  // 
+  // fashionFees: () => unwrap<{ consultation_fee: number; material_pickup_fee: number; consultation_fee_enabled: boolean; material_pickup_fee_enabled: boolean }>('/pricing/fashion-fees'),
+  // updateFashionFees: (d: { consultation_fee?: number; material_pickup_fee?: number; 
+  //   consultation_fee_enabled?: boolean; material_pickup_fee_enabled?: boolean }) => unwrap<{ 
+  //   consultation_fee: number; material_pickup_fee: number; consultation_fee_enabled: boolean; 
+  //   material_pickup_fee_enabled: boolean 
+  // }>('/pricing/fashion-fees', { method: 'PUT', json: d }),
+  deleteFashionFees: () => apiRequest('/pricing/fashion-fees', { method: 'DELETE' }),
+
+  // 
+  fashionServices: (includeInactive = false) =>
+    unwrap<FashionService[]>(`/pricing/fashion-services${includeInactive ? '?include_inactive=true' : ''}`),
+  createFashionService: (data: { name: string; description?: string; icon?: string; display_order?: number }) =>
+    unwrap<FashionService>('/pricing/fashion-services', { method: 'POST', json: data }),
+  updateFashionService: (id: string, data: Partial<FashionService>) =>
+    unwrap<FashionService>(`/pricing/fashion-services/${id}`, { method: 'PUT', json: data }),
+  deleteFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}`, { method: 'DELETE' }),
+  fashionFees: () => unwrap<FashionFees>('/pricing/fashion-fees'),
+  updateFashionFees: (data: Partial<FashionFees>) => unwrap<FashionFees>('/pricing/fashion-fees', { method: 'PUT', json: data }),
+  // 
+  hideFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}/hide`, { method: 'POST' }),
+  unhideFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}/unhide`, { method: 'POST' }),
   
+  // v2
+  // // pricingService additions
+  // fashionServices: (includeInactive = false) =>
+  //   unwrap<Array<FashionService & { is_global: boolean }>>(`/pricing/fashion-services${includeInactive ? '?include_inactive=true' : ''}`),
+  // createFashionService: (data: { name: string; description?: string; icon?: string; display_order?: number }) =>
+  //   unwrap<FashionService>('/pricing/fashion-services', { method: 'POST', json: data }),
+  // updateFashionService: (id: string, data: Partial<FashionService>) =>
+  //   unwrap<FashionService>(`/pricing/fashion-services/${id}`, { method: 'PUT', json: data }),
+  // deleteFashionService: (id: string) =>
+  //   apiRequest(`/pricing/fashion-services/${id}`, { method: 'DELETE' }),
+  // hideFashionService: (id: string) =>
+  //   apiRequest(`/pricing/fashion-services/${id}/hide`, { method: 'POST' }),
+  // unhideFashionService: (id: string) =>
+  //   apiRequest(`/pricing/fashion-services/${id}/unhide`, { method: 'POST' }),
+
 };
 
 // ─── PRODUCTS (prefix "/products"; "/categories" NOT doubled, "/products" IS) ─

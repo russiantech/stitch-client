@@ -57,8 +57,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       setPricingLoaded(true);
     }
   }, []); */
-  
-  // 
+
+  //
   const loadPricing = useCallback(async (isRetry = false) => {
   try {
     const [areas, garments, servicesList] = await Promise.allSettled([

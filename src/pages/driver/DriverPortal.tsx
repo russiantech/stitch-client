@@ -189,7 +189,8 @@ import type { LaundryOrder, FashionOrder } from '@/types/index.ts';
 const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
 const isLaundry = (o: LaundryOrder | FashionOrder): o is LaundryOrder => 'garment_items' in o;
 
-type Tab = 'pickups' | 'deliveries' | 'history';
+// type Tab = 'pickups' | 'deliveries' | 'history';
+type Tab = 'pickups' | 'deliveries' | 'available' | 'history';
 
 export default function DriverPortal() {
   const toast = useToast();
@@ -209,6 +210,38 @@ export default function DriverPortal() {
   const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
+  // 
+  const [availableList, setAvailableList] = useState<(LaundryOrder | FashionOrder)[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(false);
+
+  // 
+  const loadAvailable = useCallback(async () => {
+    setAvailableLoading(true);
+    try {
+      const type = tab === 'available' ? 'pickup' : 'pickup'; // could add a sub-toggle for pickup vs delivery
+      const res = await orderService.availableForDriver('pickup');
+      const res2 = await orderService.availableForDriver('delivery');
+      setAvailableList([...res.items, ...res2.items]);
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setAvailableLoading(false);
+    }
+  }, [tab]);
+
+  useEffect(() => { if (tab === 'available') loadAvailable(); }, [tab, loadAvailable]);
+
+  const handleRequest = async (orderId: string, isLaundry: boolean, status: string) => {
+    const requestType = status === 'Received' ? 'pickup' : 'delivery';
+    try {
+      const res = await orderService.requestAssignment(orderId, requestType);
+      toast.success(res.status === 'approved' ? 'Order assigned to you!' : 'Request sent — awaiting admin approval.');
+      loadAvailable();
+      load(); // refresh pickups/deliveries in case it was auto-approved
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
 
   const load = useCallback(async () => {
     if (!user?.id) return;

@@ -1,57 +1,188 @@
-import React, { useState, useRef } from 'react';
+// src/pages/customer/FashionRequest.tsx
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SectionHeader, MediaPreviewGrid } from '@/components/shared/index.tsx';
+import { formatNGN } from '@/services/mockData.ts';
 import { useToast } from '@/context/ToastContext.tsx';
-import { orderService } from '@/services/api.ts';
-import type { FashionServiceType, MeasurementsData, FilePreview } from '@/types/index.ts';
+import { orderService, pricingService, paymentService } from '@/services/api.ts';
+import { useAuth } from '@/context/AuthContext.tsx';
+import type { FashionService, MeasurementsData, FilePreview } from '@/types/index.ts';
 
 const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
 
-interface FashionServiceOption { id: number; name: FashionServiceType; icon: string; desc: string }
-
-const FASHION_SERVICES: FashionServiceOption[] = [
-  { id: 1, name: 'Custom Tailoring', icon: 'fa-ruler-combined', desc: 'Made-to-measure garments from scratch' },
-  { id: 2, name: 'Alteration', icon: 'fa-scissors', desc: 'Adjust fit of existing garments' },
-  { id: 3, name: 'Repair', icon: 'fa-wrench', desc: 'Fix damaged clothing items' },
-  { id: 4, name: 'Bespoke Design', icon: 'fa-pen-nib', desc: 'One-of-a-kind custom design consultation' },
-  { id: 5, name: 'Material Pickup', icon: 'fa-truck-pickup', desc: 'We collect your fabric from you' },
-];
-
 const STEPS = ['Service', 'Details', 'Media & Notes', 'Summary'];
+
+const CONSULTATION_TIME_SLOTS = [
+  '8:00 AM – 10:00 AM', '10:00 AM – 12:00 PM', '12:00 PM – 2:00 PM',
+  '2:00 PM – 4:00 PM', '4:00 PM – 6:00 PM',
+];
 
 type MeasurementKey = keyof MeasurementsData;
 const MEASUREMENT_KEYS: MeasurementKey[] = ['chest', 'waist', 'hips', 'shoulder', 'length', 'sleeve'];
+const EMPTY_MEASUREMENTS = MEASUREMENT_KEYS.reduce((acc, k) => ({ ...acc, [k]: '' }), {} as Record<MeasurementKey, string>);
+
+interface FashionFees {
+  consultation_fee: number;
+  consultation_fee_enabled: boolean;
+  consultation_applies_to: string[] | null;
+  material_pickup_fee: number;
+  material_pickup_fee_enabled: boolean;
+  material_pickup_applies_to: string[] | null;
+}
+
+const EMPTY_FEES: FashionFees = {
+  consultation_fee: 0, consultation_fee_enabled: false, consultation_applies_to: null,
+  material_pickup_fee: 0, material_pickup_fee_enabled: false, material_pickup_applies_to: null,
+};
+
+// One shared function — used for BOTH the per-service hint text on step 0
+// AND the final total calculation, so there is exactly one source of truth
+// for "does this fee apply" and it can never silently disagree with itself.
+function feeApplies(enabled: boolean, appliesTo: string[] | null, selected: string[]): boolean {
+  if (!enabled) return false;
+  if (!appliesTo || appliesTo.length === 0) return true; // no restriction = applies to all services
+  return selected.some(s => appliesTo.includes(s));
+}
+
+function calcFees(fees: FashionFees, selectedServices: string[]) {
+  const consultation = feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, selectedServices) ? fees.consultation_fee : 0;
+  const materialPickup = feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, selectedServices) ? fees.material_pickup_fee : 0;
+  return { consultation, materialPickup, total: consultation + materialPickup };
+}
+
+function serviceFeeHint(fees: FashionFees, serviceName: string): string {
+  const parts: string[] = [];
+  if (feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, [serviceName])) {
+    parts.push(`${formatNGN(fees.consultation_fee)} consultation`);
+  }
+  if (feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, [serviceName])) {
+    parts.push(`${formatNGN(fees.material_pickup_fee)} pickup`);
+  }
+  return parts.length > 0 ? `+${parts.join(' + ')}` : 'No extra fees';
+}
+
+interface FashionPendingPayload {
+  service_types: string[];
+  item_name: string;
+  fabric_source: 'customer' | 'stitch';
+  measurements?: MeasurementsData;
+  design_notes?: string;
+  consultation_date?: string;
+  consultation_time?: string;
+  preferred_delivery_date?: string;
+  delivery_address: string;
+  total_amount: number;
+}
 
 interface RequestForm {
-  service: FashionServiceOption | null;
+  services: string[]; // selected FashionService names, multi-select
   item_name: string;
   measurements: Record<MeasurementKey, string>;
   description: string;
+  consultation_date: string;
+  consultation_time: string;
   preferred_delivery: string;
   address: string;
   fabric_source: 'customer' | 'stitch';
   files: FilePreview[];
 }
 
-const EMPTY_MEASUREMENTS = MEASUREMENT_KEYS.reduce((acc, k) => ({ ...acc, [k]: '' }), {} as Record<MeasurementKey, string>);
+// ─── Paystack: backend-initialized, inline-first with redirect fallback ──────
+async function paystackPay({ email, amount, metadata, pendingPayload, onSuccess, onCancel, toast }: {
+  email: string; amount: number; metadata: Record<string, unknown>;
+  pendingPayload: FashionPendingPayload;
+  onSuccess: (reference: string) => void; onCancel?: () => void;
+  toast: ReturnType<typeof useToast>;
+}): Promise<{ verified: boolean; reference?: string; cancelled?: boolean; redirected?: boolean }> {
+  let res;
+  try {
+    res = await paymentService.initialize({
+      email, amount, purpose: 'order', metadata,
+      callback_url: `${window.location.origin}/payment/callback`,
+    });
+  } catch (err) {
+    toast.error('Could not start payment: ' + errMsg(err));
+    return { verified: false };
+  }
+
+  const { reference, access_code, authorization_url } = res;
+
+  const PaystackPop = window.PaystackPop;
+  if (PaystackPop && access_code) {
+    return new Promise((resolve) => {
+      const popup = new PaystackPop();
+      popup.resumeTransaction(access_code, {
+        onSuccess: async (response) => {
+          toast.info('Verifying payment…');
+          try {
+            await paymentService.verify(response.reference);
+            toast.success('Payment confirmed!');
+            onSuccess(response.reference);
+            resolve({ verified: true, reference: response.reference });
+          } catch (err) {
+            toast.error('Payment verification failed — please contact support with reference: ' + response.reference);
+            console.error(err);
+            resolve({ verified: false, reference: response.reference });
+          }
+        },
+        onCancel: () => {
+          onCancel?.();
+          resolve({ verified: false, cancelled: true });
+        },
+      });
+    });
+  }
+
+  // Fallback: full redirect. Persist the actual fashion request payload
+  // (not a laundry-shaped one) so the callback page can complete order
+  // creation after the round-trip.
+  if (authorization_url) {
+    sessionStorage.setItem('pending_order', JSON.stringify({ reference, order_kind: 'fashion', payload: pendingPayload }));
+    toast.info('Redirecting to payment page…');
+    window.location.href = authorization_url;
+    return { verified: false, redirected: true };
+  }
+
+  toast.error('Could not start payment. Please try again.');
+  return { verified: false };
+}
 
 export default function FashionRequest() {
   const toast = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
+  const [services, setServices] = useState<FashionService[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [fees, setFees] = useState<FashionFees>(EMPTY_FEES);
+
   const [form, setForm] = useState<RequestForm>({
-    service: null,
+    services: [],
     item_name: '',
     measurements: EMPTY_MEASUREMENTS,
     description: '',
+    consultation_date: '',
+    consultation_time: '',
     preferred_delivery: '',
     address: '',
     fabric_source: 'customer',
     files: [],
   });
+
+  useEffect(() => {
+    pricingService.fashionServices().then(setServices).catch(() => setServices([])).finally(() => setLoadingServices(false));
+    pricingService.fashionFees().then(setFees).catch(() => {});
+  }, []);
+
+  const { consultation: consultationFee, materialPickup: materialPickupFee, total: totalAmount } = useMemo(
+    () => calcFees(fees, form.services), [fees, form.services],
+  );
+
+  const toggleService = (name: string) =>
+    setForm(p => ({ ...p, services: p.services.includes(name) ? p.services.filter(s => s !== name) : [...p.services, name] }));
 
   const setMeasure = (k: MeasurementKey, v: string) => setForm(p => ({ ...p, measurements: { ...p.measurements, [k]: v } }));
 
@@ -71,13 +202,13 @@ export default function FashionRequest() {
   const removeFile = (i: number) => setForm(p => ({ ...p, files: p.files.filter((_, idx) => idx !== i) }));
 
   const canProceed = () => {
-    if (step === 0) return !!form.service;
+    if (step === 0) return form.services.length > 0;
     if (step === 1) return !!form.item_name && !!form.address;
     return true;
   };
 
   const handleSubmit = async () => {
-    if (!form.service) return;
+    if (form.services.length === 0) return;
     setSubmitting(true);
     try {
       const measurements: MeasurementsData = {};
@@ -86,14 +217,38 @@ export default function FashionRequest() {
         if (v) measurements[k] = Number(v);
       });
 
-      await orderService.createFashion({
-        service_type: form.service.name,
+      const pendingPayload: FashionPendingPayload = {
+        service_types: form.services,
         item_name: form.item_name,
         fabric_source: form.fabric_source,
         measurements: Object.keys(measurements).length > 0 ? measurements : undefined,
         design_notes: form.description || undefined,
+        consultation_date: form.consultation_date || undefined,
+        consultation_time: form.consultation_time || undefined,
         preferred_delivery_date: form.preferred_delivery || undefined,
         delivery_address: form.address,
+        total_amount: totalAmount,
+      };
+
+      let paymentRef: string | undefined;
+
+      if (totalAmount > 0) {
+        const result = await paystackPay({
+          email: user?.email || 'customer@stitch.ng',
+          amount: totalAmount,
+          metadata: { order_type: 'fashion', services: form.services },
+          pendingPayload,
+          toast,
+          onSuccess: (reference) => { paymentRef = reference; },
+          onCancel: () => toast.info('Payment cancelled. Request not submitted.'),
+        });
+        if (!paymentRef) { setSubmitting(false); return; }
+      }
+
+      await orderService.createFashion({
+        ...pendingPayload,
+        payment_method: totalAmount > 0 ? 'direct' : undefined,
+        payment_reference: paymentRef,
       });
       toast.success('Fashion request submitted! Our team will contact you to arrange a consultation.');
       navigate('/orders');
@@ -127,37 +282,82 @@ export default function FashionRequest() {
 
       {step === 0 && (
         <div>
-          <h6 className="fw-semibold mb-3">What service do you need?</h6>
-          <div className="d-flex flex-column gap-2">
-            {FASHION_SERVICES.map(svc => (
-              <div key={svc.id}
-                className={`bg-white rounded-3 border p-3 d-flex align-items-center gap-3 
-                ${form.service?.id === svc.id ? 'border-primary border-2 bg-primary bg-opacity-10' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setForm(p => ({ ...p, service: svc }))}
-              >
-                <div className="stat-icon bg-info bg-opacity-10 flex-shrink-0" style={{ width: 44, height: 44 }}>
-                  <i className={`fas ${svc.icon} text-primary-subtle`} />
-                </div>
-                <div className="flex-1">
-                  <div className="fw-medium small">{svc.name}</div>
-                  <div className="text-subtle" style={{ fontSize: 11 }}>{svc.desc}</div>
-                </div>
-                {form.service?.id === svc.id && <i className="fas fa-check-circle text-primary" />}
+          <h6 className="fw-semibold mb-3 text-dark">What service(s) do you need?</h6>
+          {/* {loadingServices ? (
+            <div className="text-muted small">Loading services…</div>
+          ) : ( */}
+          {loadingServices ? (
+            <div className="text-center py-5 text-muted">
+              <span className="spinner-border spinner-border-sm me-2" />
+              Loading services…
+            </div>
+          ) : services.length === 0 ? (
+            <div className="alert alert-warning small">
+              <i className="fas fa-exclamation-triangle me-2" />
+              No fashion services are currently available. Please contact support.
+            </div>
+          ) : (
+            <div className="d-flex flex-column gap-2">
+              {services.map(svc => {
+                const sel = form.services.includes(svc.name);
+                return (
+                  <div key={svc.id}
+                    className={`rounded-3 border p-3 d-flex align-items-center gap-3
+                    ${sel ? 'bg-primary border-primary shadow-sm' : 'bg-white border-light'}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => toggleService(svc.name)}
+                  >
+                    <div className={`d-flex align-items-center justify-content-center flex-shrink-0 rounded-3 ${sel ? 'bg-white bg-opacity-25' : 'bg-primary bg-opacity-10'}`}
+                      style={{ width: 44, height: 44 }}>
+                      <i className={`fas ${svc.icon || 'fa-shirt'} text-primary`} />
+                    </div>
+                    <div className="flex-grow-1">
+                      <div className={`fw-medium small ${sel ? 'text-white' : 'text-dark'}`}>{svc.name}</div>
+                      {svc.description && (
+                        <div className={`${sel ? 'text-white text-opacity-75' : 'text-muted'}`} style={{ fontSize: 11 }}>{svc.description}</div>
+                      )}
+                      <div className={`small fw-medium ${sel ? 'text-white' : 'text-primary'}`}>
+                        {/* {serviceFeeHint(fees, svc.name)} */}
+                        <div className="text-muted" style={{ fontSize: 11 }}>
+                          {feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, [svc.name]) ||
+                          feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, [svc.name])
+                            ? <><i className="fas fa-circle-info me-1" />May include a one-time fee — see total below</>
+                            : 'No extra fees'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`d-flex align-items-center justify-content-center flex-shrink-0 ${sel ? 'bg-white text-primary' : 'border'}`}
+                      style={{ width: 22, height: 22, borderRadius: 6, fontSize: 12 }}>
+                      {sel && <i className="fas fa-check" />}
+                    </div>
+                  </div>
+                );
+              })}
+              
+            {form.services.length > 0 && totalAmount > 0 && (
+              <div className="alert alert-info py-2 small mt-3 mb-0">
+                <i className="fas fa-info-circle me-2" />
+                A one-time fee of <strong>{formatNGN(totalAmount)}</strong> applies to this request —
+                not per service, charged once for your whole order.
               </div>
-            ))}
-          </div>
+            )}
+
+              {services.length === 0 && (
+                <div className="text-muted small">No fashion services have been configured yet — please contact your admin.</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {step === 1 && (
         <div>
-          <h6 className="fw-semibold mb-3">Garment Details</h6>
-          <div className="bg-white rounded-3 border p-4">
+          <h6 className="fw-semibold mb-3 text-dark">Garment Details</h6>
+          <div className="bg-white rounded-3 border border-light shadow-sm p-4">
             <div className="mb-3">
-              <label className="form-label small fw-medium">Item / Garment Name *</label>
+              <label className="form-label small fw-medium text-dark">Item / Garment Name *</label>
               <input
-                className="form-control"
+                className="form-control border-light"
                 placeholder="e.g. Aso-Oke Senator Suit, Wedding Guest Gown..."
                 value={form.item_name}
                 onChange={e => setForm(p => ({ ...p, item_name: e.target.value }))}
@@ -165,7 +365,7 @@ export default function FashionRequest() {
             </div>
 
             <div className="mb-3">
-              <label className="form-label small fw-medium">Fabric Source</label>
+              <label className="form-label small fw-medium text-dark">Fabric Source</label>
               <div className="d-flex gap-3">
                 {([
                   { val: 'customer' as const, label: 'I will provide fabric' },
@@ -182,15 +382,15 @@ export default function FashionRequest() {
             </div>
 
             <div className="mb-4">
-              <label className="form-label small fw-medium">Measurements (inches) — optional</label>
+              <label className="form-label small fw-medium text-dark">Measurements (inches) — optional</label>
               <div className="row g-2">
                 {MEASUREMENT_KEYS.map(k => (
                   <div key={k} className="col-4">
-                    <label className="form-label" style={{ fontSize: 11, textTransform: 'capitalize' }}>{k}</label>
+                    <label className="form-label text-capitalize" style={{ fontSize: 11 }}>{k}</label>
                     <div className="input-group input-group-sm">
                       <input
                         type="number"
-                        className="form-control"
+                        className="form-control border-light"
                         value={form.measurements[k]}
                         onChange={e => setMeasure(k, e.target.value)}
                         placeholder="0"
@@ -207,16 +407,33 @@ export default function FashionRequest() {
               </div>
             </div>
 
+            <div className="row g-3 mb-3">
+              <div className="col-sm-6">
+                <label className="form-label small fw-medium text-dark">Preferred Consultation Date</label>
+                <input type="date" className="form-control border-light" value={form.consultation_date}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setForm(p => ({ ...p, consultation_date: e.target.value }))} />
+              </div>
+              <div className="col-sm-6">
+                <label className="form-label small fw-medium text-dark">Preferred Time</label>
+                <select className="form-select border-light" value={form.consultation_time}
+                  onChange={e => setForm(p => ({ ...p, consultation_time: e.target.value }))}>
+                  <option value="">Select time…</option>
+                  {CONSULTATION_TIME_SLOTS.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
             <div className="mb-3">
-              <label className="form-label small fw-medium">Preferred Delivery Date</label>
-              <input type="date" className="form-control" value={form.preferred_delivery}
-                min={new Date().toISOString().split('T')[0]}
+              <label className="form-label small fw-medium text-dark">Preferred Delivery Date</label>
+              <input type="date" className="form-control border-light" value={form.preferred_delivery}
+                min={form.consultation_date || new Date().toISOString().split('T')[0]}
                 onChange={e => setForm(p => ({ ...p, preferred_delivery: e.target.value }))} />
             </div>
 
             <div>
-              <label className="form-label small fw-medium">Your Address / Location *</label>
-              <input className="form-control" placeholder="Full address for consultation visit..."
+              <label className="form-label small fw-medium text-dark">Your Address / Location *</label>
+              <input className="form-control border-light" placeholder="Full address for consultation visit..."
                 value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
             </div>
           </div>
@@ -225,10 +442,10 @@ export default function FashionRequest() {
 
       {step === 2 && (
         <div>
-          <h6 className="fw-semibold mb-3">Inspiration & Details</h6>
-          <div className="bg-white rounded-3 border p-4">
+          <h6 className="fw-semibold mb-3 text-dark">Inspiration & Details</h6>
+          <div className="bg-white rounded-3 border border-light shadow-sm p-4">
             <div className="mb-4">
-              <label className="form-label small fw-medium">Inspiration Images / Videos</label>
+              <label className="form-label small fw-medium text-dark">Inspiration Images / Videos</label>
               <div className="upload-zone mb-3" onClick={() => fileRef.current?.click()}>
                 <i className="fas fa-image fa-2x text-muted mb-2 d-block" />
                 <div className="small text-muted">Upload photos of styles you like</div>
@@ -244,9 +461,9 @@ export default function FashionRequest() {
             </div>
 
             <div>
-              <label className="form-label small fw-medium">Description / Instructions</label>
+              <label className="form-label small fw-medium text-dark">Description / Instructions</label>
               <textarea
-                className="form-control"
+                className="form-control border-light"
                 rows={4}
                 placeholder="Describe exactly what you want — style, colors, embellishments, neckline, etc..."
                 value={form.description}
@@ -259,45 +476,77 @@ export default function FashionRequest() {
 
       {step === 3 && (
         <div>
-          <h6 className="fw-semibold mb-3">Request Summary</h6>
-          <div className="bg-white rounded-3 border p-4 mb-3">
+          <h6 className="fw-semibold mb-3 text-dark">Request Summary</h6>
+          <div className="bg-white rounded-3 border border-light shadow-sm p-4 mb-3">
             <div className="d-flex justify-content-between mb-2">
-              <span className="small text-muted">Service</span>
-              <span className="small fw-medium">{form.service?.name}</span>
+              <span className="small text-muted">Service(s)</span>
+              <span className="small fw-medium text-dark text-end" style={{ maxWidth: '60%' }}>{form.services.join(', ')}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span className="small text-muted">Item</span>
-              <span className="small fw-medium">{form.item_name}</span>
+              <span className="small fw-medium text-dark">{form.item_name}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span className="small text-muted">Fabric</span>
-              <span className="small fw-medium">{form.fabric_source === 'customer' ? 'Customer providing' : 'Stitch sourcing'}</span>
+              <span className="small fw-medium text-dark">{form.fabric_source === 'customer' ? 'Customer providing' : 'Stitch sourcing'}</span>
             </div>
+            {form.consultation_date && (
+              <div className="d-flex justify-content-between mb-2">
+                <span className="small text-muted">Consultation</span>
+                <span className="small fw-medium text-dark">{form.consultation_date}{form.consultation_time && ` · ${form.consultation_time}`}</span>
+              </div>
+            )}
             {form.preferred_delivery && (
               <div className="d-flex justify-content-between mb-2">
                 <span className="small text-muted">Target Delivery</span>
-                <span className="small fw-medium">{form.preferred_delivery}</span>
+                <span className="small fw-medium text-dark">{form.preferred_delivery}</span>
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
               <span className="small text-muted">Address</span>
-              <span className="small fw-medium text-end" style={{ maxWidth: '60%' }}>{form.address}</span>
+              <span className="small fw-medium text-dark text-end" style={{ maxWidth: '60%' }}>{form.address}</span>
             </div>
             {form.files.length > 0 && (
               <div className="d-flex justify-content-between mb-2">
                 <span className="small text-muted">Attachments</span>
-                <span className="small fw-medium">{form.files.length} file(s)</span>
+                <span className="small fw-medium text-dark">{form.files.length} file(s)</span>
               </div>
             )}
+
+            {/* ── Fee breakdown — driven by the same fees/calcFees used on step 0 ── */}
+            <div className="mt-3 pt-3 border-top border-light">
+              {consultationFee > 0 && (
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Consultation fee</span>
+                  <span className="text-dark">{formatNGN(consultationFee)}</span>
+                </div>
+              )}
+              {materialPickupFee > 0 && (
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Material pickup fee</span>
+                  <span className="text-dark">{formatNGN(materialPickupFee)}</span>
+                </div>
+              )}
+              {totalAmount === 0 && (
+                <div className="text-success small mb-1">
+                  <i className="fas fa-check-circle me-1" />No extra fees for the selected service(s).
+                </div>
+              )}
+              <div className="d-flex justify-content-between fw-bold border-top border-light pt-2 mt-1">
+                <span className="text-dark">Total</span>
+                <span className="text-primary fs-5">{formatNGN(totalAmount)}</span>
+              </div>
+            </div>
+
             {Object.values(form.measurements).some(v => v) && (
-              <div className="mt-3 pt-3 border-top">
+              <div className="mt-3 pt-3 border-top border-light">
                 <div className="text-muted small mb-2">Measurements</div>
                 <div className="row g-2">
                   {Object.entries(form.measurements).filter(([, v]) => v).map(([k, v]) => (
                     <div key={k} className="col-4">
                       <div className="bg-light rounded-2 p-2 text-center">
-                        <div className="fw-bold small">{v}"</div>
-                        <div className="text-muted" style={{ fontSize: 10, textTransform: 'capitalize' }}>{k}</div>
+                        <div className="fw-bold small text-dark">{v}"</div>
+                        <div className="text-muted text-capitalize" style={{ fontSize: 10 }}>{k}</div>
                       </div>
                     </div>
                   ))}
@@ -305,14 +554,18 @@ export default function FashionRequest() {
               </div>
             )}
           </div>
-          <div className="alert alert-info small">
+
+          <div className="alert alert-info small border-0 bg-info bg-opacity-10 text-info-emphasis">
             <i className="fas fa-calendar-check me-2" />
-            Our team will reach out within 24 hours to schedule your consultation visit and provide a quote.
+            Our team will reach out within 24 hours to schedule your consultation.
+            {totalAmount > 0 && (
+              <> A fee of <strong>{formatNGN(totalAmount)}</strong> applies{materialPickupFee > 0 ? ' for consultation and material pickup' : ' for the initial consultation'}.</>
+            )}
           </div>
         </div>
       )}
 
-      <div className="d-flex justify-content-between mt-4">
+      <div className="d-flex justify-content-between mt-4 pt-2">
         <button className="btn btn-outline-secondary" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
           <i className="fas fa-arrow-left me-2" />Back
         </button>
@@ -324,7 +577,7 @@ export default function FashionRequest() {
           <button className="btn btn-success" onClick={handleSubmit} disabled={submitting}>
             {submitting
               ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</>
-              : <><i className="fas fa-paper-plane me-2" />Submit Request</>}
+              : <><i className="fas fa-paper-plane me-2" />Submit Request{totalAmount > 0 ? ` • ${formatNGN(totalAmount)}` : ''}</>}
           </button>
         )}
       </div>

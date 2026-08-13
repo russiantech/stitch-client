@@ -337,6 +337,7 @@ function DetailContent({ order, statuses }: { order: AnyOrder; statuses: readonl
   );
 }
 
+
 export default function MyOrders() {
   const toast = useToast();
   const [tab, setTab] = useState<'laundry' | 'fashion'>('laundry');
@@ -403,18 +404,13 @@ export default function MyOrders() {
     setSelected(null);
   };
 
-  // const openOrder = (order: AnyOrder) => {
-  //   clearDrawerTimeout();
-  //   setSelected(order);
-  //   setDrawerOpen(true);
-  // };
-
   return (
     <div style={{ position: 'relative' }}>
       <SectionHeader
         title="My Orders"
         subtitle="Track and manage your laundry and fashion orders"
-        actions={<Link to="/orders/new" className="btn btn-primary btn-sm"><i className="fas fa-plus me-1" />New Order</Link>}
+        // actions={<Link to="/orders/new" className="btn btn-primary btn-sm"><i className="fas fa-plus me-1" />New Order</Link>}
+        actions={<Link to={tab === 'laundry' ? '/orders/new' : '/fashion/new'} className="btn btn-primary btn-sm"><i className="fas fa-plus me-1" />New Order</Link>}
       />
 
       <ul className="nav nav-tabs mb-4" data-tour="tour-orders-tabs">

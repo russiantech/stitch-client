@@ -647,6 +647,18 @@ export interface Organization {
   created_at: string;
 }
 
+// ─── AUTH ───────────────────────────────────────────────────────────────────
+
+export interface SignupPayload {
+  username: string;
+  email: string;
+  names?: string;
+  phone?: string;
+  password: string;
+  org_name?: string;
+  org_code?: string;
+}
+
 // Mirrors User.get_summary() in app/models/users.py exactly.
 export interface User {
   id: string;
@@ -789,7 +801,8 @@ export interface FashionOrder {
 
   status: string;
   fashion_status: FashionStatus | null;
-  service_type: FashionServiceType | null;
+  // service_type: FashionServiceType | null;
+  service_types: string[];
   item_name: string | null;
   fabric_source: string | null;
   measurements: MeasurementsData | null;
@@ -853,7 +866,8 @@ export interface LaundryOrderCreatePayload {
 }
 
 export interface FashionOrderCreatePayload {
-  service_type: FashionServiceType;
+  // service_type: FashionServiceType;
+  service_types: string[];
   item_name: string;
   fabric_source?: string;
   measurements?: MeasurementsData | null;
@@ -861,8 +875,12 @@ export interface FashionOrderCreatePayload {
   reference_images?: string[] | null;
   preferred_delivery_date?: string | null;
   consultation_date?: string | null;
+  consultation_time?: string | null;
+  consultation_fee?: number | null;
+  material_pickup_fee?: number | null;
   delivery_address?: string | null;
   priority?: OrderPriority;
+  payment_reference?: string | null;
   payment_method?: PaymentMethod;
   subscription_id?: string | null;
   total_amount?: number;
@@ -873,6 +891,41 @@ export interface OrderCreateResult {
   id: string;
   reference: string;
   total_amount?: number;
+}
+
+// Remove the hardcoded union entirely
+// export type FashionServiceType = 'Custom Tailoring' | 'Alteration' | ...
+
+// Replace with a dynamic catalog entry, same shape as GarmentType/LaundryService
+export interface FashionService {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+// 
+// src/utils/fashionFees.ts — the ONE place that decides whether a fee applies
+export interface FashionFees {
+  consultation_fee: number;
+  consultation_fee_enabled: boolean;
+  consultation_applies_to: FashionServiceType[] | null;
+  material_pickup_fee: number;
+  material_pickup_fee_enabled: boolean;
+  material_pickup_applies_to: FashionServiceType[] | null;
+}
+
+// 
+export interface FashionServiceRow {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  is_active: boolean;
+  display_order: number;
+  is_global: boolean;
 }
 
 // ─── Subscriptions / Plans / Usage ────────────────────────────────────────────
