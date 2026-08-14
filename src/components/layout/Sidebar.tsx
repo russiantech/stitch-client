@@ -85,7 +85,7 @@ export default function Sidebar({ show, onClose }: { show: boolean; onClose: () 
             <img src="/images/logos/favicon.ico" alt="Stitch" style={{ width:28, height:28, marginRight:8 }} />
             </span>Stitch */}
 
-            <img src="/images/logos/stitch-logo.svg" alt="Stitch" style={{ width:200, height:38, marginRight:8 }} />
+            <img src="/images/logos/stitch-logo.png" alt="Stitch" style={{ width:200, height:38, marginRight:8 }} />
           
         </Link>
         <div className="px-4 py-3 border-bottom">
