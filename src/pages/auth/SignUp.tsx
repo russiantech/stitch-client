@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authService, orgService } from '@/services/api.ts';
-import type { SignupPayload } from '@/services/api.ts';
+// import type { SignupPayload } from '@/services/api.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import PasswordInput from '@/components/shared/PasswordInput.tsx';
+import { SignupPayload } from '@/types';
 
 // ── Mode derives from URL, never from user input ──────────────────────────────
 // /signup                → new_org   (creating a brand-new organization)
@@ -187,7 +188,9 @@ export default function SignUp() {
     <div className="text-center mb-4">
       <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
         {/* <span className="brand-scissors me-2"><i className="fas fa-scissors" /></span>Stitch */}
-        <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" />
+        <Link to="/">
+          <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" />
+        </Link>
       </div>
       <p className="text-muted small mb-0">Digital infrastructure for Nigeria's laundry & fashion economy</p>
     </div>

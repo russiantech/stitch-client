@@ -316,7 +316,7 @@ const SolutionBand = () => {
       <div className="wrap">
         <div className="sec-head">
           <span className="sec-eyebrow">The fix</span>
-          <h2>Leave the notebook behind.</h2>
+          <h2 className='text-white'>Leave the notebook behind.</h2>
           <p>One system for orders, pricing and payments — simple enough for a counter that's never used software before.</p>
         </div>
         <div className="band-grid">
