@@ -1,5 +1,3 @@
-
-
 // v2
 // src/App.tsx
 import React, { lazy, Suspense } from 'react';
@@ -16,6 +14,8 @@ import AppShell from './components/layout/AppShell.tsx';
 const SignIn            = lazy(() => import('./pages/auth/SignIn.tsx'));
 const SignUp            = lazy(() => import('./pages/auth/SignUp.tsx'));
 const ForgotPassword    = lazy(() => import('./pages/auth/ForgotPassword.tsx'));
+const LandingPage       = lazy(() => import('./pages/landing/LandingPage.tsx'));
+
 
 // Customers
 const CustomerDashboard = lazy(() => import('./pages/customer/Dashboard.tsx'));
@@ -30,7 +30,7 @@ const Subscriptions     = lazy(() => import('./pages/customer/Subscriptions.tsx'
 // Organization
 const PayoutSettings   = lazy(() => import('./pages/org/PayoutSettings.tsx'));
 const AcceptInvite     = lazy(() => import('./pages/org/AcceptInvite.tsx'));
-const Settings     = lazy(() => import('./pages/org/Settings.tsx'));
+const Settings         = lazy(() => import('./pages/org/Settings.tsx'));
 
 // Operations
 const OpsDashboard      = lazy(() => import('./pages/operations/OpsDashboard.tsx'));
@@ -109,7 +109,7 @@ function AppRoutes() {
       <Route path="/signin" element={PUB(SignIn)} />
       <Route path="/signup" element={PUB(SignUp)} />
       <Route path="/forgot-password" element={PUB(ForgotPassword)} />
-      <Route path="/"       element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={PUB(LandingPage)} />
 
       {/* Customer */}
       <Route path="/dashboard"     element={P(CustomerDashboard)} />
@@ -182,4 +182,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
