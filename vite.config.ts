@@ -15,14 +15,15 @@ export default defineConfig({
       registerType: 'prompt', // we control the update prompt ourselves — see UpdateToast below
       includeAssets: ['favicon.ico', 'images/logos/apple-touch-icon.png'],
       manifest: {
-        name: 'Stitch — Laundry & Fashion Operations',
+        name: 'Stitch — Digitizing the informal sector.',
         short_name: 'Stitch',
         description: 'Digital infrastructure for laundry and fashion businesses in Nigeria.',
         theme_color: '#5826ee',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        start_url: '/dashboard',
+        // start_url: '/dashboard',
+        start_url: '/',
         scope: '/',
         icons: [
           { src: '/images/pwa/icon-192.png', sizes: '192x192', type: 'image/png' },

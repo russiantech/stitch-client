@@ -1,6 +1,3 @@
-// // src/components/pwa/UpdateToast.tsx
-// 6. Update notification — quiet, never forces a reload mid-session
-
 // v2
 // src/components/pwa/UpdateToast.tsx
 import { useRegisterSW } from 'virtual:pwa-register/react';

@@ -157,9 +157,9 @@ export default function CustomerDashboard() {
           <i className="fas fa-layer-group text-primary fs-3" />
           <div className="flex-1">
             <div className="fw-semibold">No active subscriptions</div>
-            <div className="text-muted small">Subscribe to a volume plan to simplify payments for laundry orders.</div>
+            <div className="small">Subscribe to a volume plan to simplify payments for laundry orders.</div>
           </div>
-          <Link to="/subscriptions" className="btn btn-primary btn-sm flex-shrink-0">Browse Plans</Link>
+          <Link to="/subscriptions" className="btn btn-secondary btn-sm flex-shrink-01">Browse Plans</Link>
         </div>
       )}
 
@@ -221,7 +221,7 @@ export default function CustomerDashboard() {
                         {plan.name}
                         {plan.is_popular && <span className="badge bg-primary ms-2" style={{ fontSize: 9 }}>Popular</span>}
                       </div>
-                      <div className="text-muted" style={{ fontSize: 11 }}>{plan.units} units/{plan.interval}</div>
+                      <div style={{ fontSize: 11 }}>{plan.units} units/{plan.interval}</div>
                     </div>
                     <div className="text-end">
                       <div className="fw-bold text-primary">{formatNGN(plan.amount)}</div>

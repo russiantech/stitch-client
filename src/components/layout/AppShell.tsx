@@ -55,7 +55,7 @@ function ShellBody({ children }: AppShellProps) {
       <BannerTrigger />
       <TourOverlay />
       <InstallBanner />
-      <UpdateToast />
+      {/* <UpdateToast /> - Because it's already being called/rendered in the App.tsx globally */}
 
       <TourButton role={role} />
       <TourBanner role={role} />
