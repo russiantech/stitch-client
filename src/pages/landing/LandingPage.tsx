@@ -4,19 +4,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { usePWAInstall } from '@/hooks/usePWAInstall.ts';
 import '@/styles/LandingPage.css';
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────── */
 const StitchMark = ({ className = '' }: { className?: string }) => (
-//   <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-//     <rect width="40" height="40" rx="11" fill="#5B3DF5"/>
-//     <path d="M10 24C13 24 13 16 16 16C19 16 19 24 22 24C25 24 25 16 28 16" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="0.5 5.2"/>
-//     <circle cx="10" cy="24" r="1.6" fill="#FF5A46"/>
-//   </svg>
-
-<img src="/images/logos/stitch-logo.png" style={{ width:200, height:38, marginRight:8 }} alt="Stitch Mark" className={className} />
-//  <img src="/images/logos/stitch-logo.png" alt="Stitch" style={{ width:200, height:38, marginRight:8 }} />
-
+  <img src="/images/logos/stitch-logo.png" style={{ width:200, height:38, marginRight:8 }} alt="Stitch Mark" className={className} />
 );
 
 const Check = ({ size = 18 }: { size?: number }) => (
@@ -31,6 +24,9 @@ const IconRuler = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="no
 const IconScan = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>;
 const IconScale = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>;
 const IconCard = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="white" strokeWidth="1.8"/><path d="M2 10h20" stroke="white" strokeWidth="1.8"/></svg>;
+const IconDownload = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+);
 const IconChev = ({ open }: { open: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ transform: open ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform .2s ease' }}>
     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -207,6 +203,50 @@ function useScrollReveal() {
   return ref;
 }
 
+/* ─── PWA Install Button ───────────────────────────────────────────────── */
+function InstallButton({ variant = 'primary' }: { variant?: 'primary' | 'ghost' | 'light' }) {
+  const { canInstall, isIosDevice, hasNativePrompt, promptInstall, installed } = usePWAInstall();
+  const [showIosModal, setShowIosModal] = useState(false);
+
+  if (installed || !canInstall) return null;
+
+  const handleClick = async () => {
+    if (isIosDevice && !hasNativePrompt) {
+      setShowIosModal(true);
+      return;
+    }
+    await promptInstall();
+  };
+
+  const btnClass = variant === 'primary' ? 'btn btn-primary' : variant === 'light' ? 'btn btn-light' : 'btn btn-ghost';
+
+  return (
+    <>
+      <button className={`${btnClass} install-btn`} onClick={handleClick}>
+        <IconDownload /> Install app
+      </button>
+      {showIosModal && (
+        <div className="ios-modal" onClick={() => setShowIosModal(false)}>
+          <div className="ios-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="ios-modal-header">
+              <h6>Install on iPhone/iPad</h6>
+              <button className="ios-modal-close" onClick={() => setShowIosModal(false)}>×</button>
+            </div>
+            <div className="ios-modal-body">
+              <ol>
+                <li>Tap the <strong>Share</strong> button <span className="ios-share-icon">⎋</span> in Safari's toolbar.</li>
+                <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+                <li>Tap <strong>Add</strong> in the top-right corner.</li>
+              </ol>
+            </div>
+            <button className="btn btn-primary btn-sm w-100" onClick={() => setShowIosModal(false)}>Got it</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ─── Sections ──────────────────────────────────────────────────────────── */
 const Nav = () => {
   const [open, setOpen] = useState(false);
@@ -222,7 +262,6 @@ const Nav = () => {
       <div className="nav-inner">
         <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
           <StitchMark className="mark1" />
-          {/* <span>Stitch</span> */}
         </a>
         <nav className={`nav-links ${open ? 'open' : ''}`}>
           {[
@@ -249,6 +288,9 @@ const Nav = () => {
 
 const Hero = () => {
   const ref = useScrollReveal();
+  const { canInstall, installed } = usePWAInstall();
+  const showInstall = canInstall && !installed;
+
   return (
     <section className="hero" id="top" ref={ref}>
       <div className="wrap hero-grid">
@@ -259,6 +301,7 @@ const Hero = () => {
           <div className="hero-actions">
             <Link to="/signup" className="btn btn-primary">Get started — it's free</Link>
             <a href="#how" className="btn btn-ghost" onClick={(e) => { e.preventDefault(); document.querySelector('#how')?.scrollIntoView({ behavior: 'smooth' }); }}>See how it works</a>
+            {showInstall && <InstallButton variant="ghost" />}
           </div>
           <div className="trust-line"><IconShield /> Piloted with real laundry & fashion businesses in Lagos since 2024</div>
         </div>
@@ -316,7 +359,7 @@ const SolutionBand = () => {
       <div className="wrap">
         <div className="sec-head">
           <span className="sec-eyebrow">The fix</span>
-          <h2 className='text-white'>Leave the notebook behind.</h2>
+          <h2 className="text-white">Leave the notebook behind.</h2>
           <p>One system for orders, pricing and payments — simple enough for a counter that's never used software before.</p>
         </div>
         <div className="band-grid">
@@ -602,24 +645,30 @@ const FAQ = () => {
   );
 };
 
-const FinalCTA = () => (
-  <section className="final-cta" id="final">
-    <div className="wrap">
-      <div className="cta-panel">
-        <div className="cta-inner">
-          <div className="cta-text">
-            <h2>Ready to leave the notebook behind?</h2>
-            <p>Set up your shop on Stitch in minutes — free to start, and built for exactly how your counter already works.</p>
-          </div>
-          <div className="cta-actions">
-            <Link to="/signup" className="btn btn-light">Get started free</Link>
-            <a href="mailto:hi@stitch.ng" className="btn btn-ghost cta-ghost">Talk to the team</a>
+const FinalCTA = () => {
+  const { canInstall, installed } = usePWAInstall();
+  const showInstall = canInstall && !installed;
+
+  return (
+    <section className="final-cta" id="final">
+      <div className="wrap">
+        <div className="cta-panel">
+          <div className="cta-inner">
+            <div className="cta-text">
+              <h2>Ready to leave the notebook behind?</h2>
+              <p>Set up your shop on Stitch in minutes — free to start, and built for exactly how your counter already works.</p>
+            </div>
+            <div className="cta-actions">
+              <Link to="/signup" className="btn btn-light">Get started free</Link>
+              <a href="mailto:hi@stitch.ng" className="btn btn-ghost cta-ghost">Talk to the team</a>
+              {showInstall && <InstallButton variant="light" />}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const Footer = () => (
   <footer>
@@ -628,7 +677,6 @@ const Footer = () => (
         <div className="foot-brand">
           <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
             <StitchMark className="mark1" />
-            {/* <span>Stitch</span> */}
           </a>
           <p>Digitizing Nigeria's informal laundry & fashion economy — one order, one measurement, one payment at a time. A product of Miva Innovators.</p>
         </div>

@@ -651,3 +651,101 @@
 @media (prefers-reduced-motion: reduce) {
   .stitch-landing * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+
+/* ─── PWA Install Button ──────────────────────────────────────────────── */
+.install-btn {
+  gap: 6px;
+}
+.install-btn svg {
+  flex-shrink: 0;
+}
+
+/* ─── iOS Install Modal ───────────────────────────────────────────────── */
+.ios-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 10, 26, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: iosFadeIn 0.2s ease;
+}
+@keyframes iosFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ios-modal-content {
+  background: var(--paper-raised);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+  animation: iosSlideUp 0.25s ease;
+}
+@keyframes iosSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ios-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.ios-modal-header h6 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ios-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.ios-modal-close:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+.ios-modal-body ol {
+  padding-left: 20px;
+  margin: 0 0 20px;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+.ios-modal-body li {
+  margin-bottom: 10px;
+}
+.ios-modal-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.ios-share-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--indigo-soft);
+  color: var(--indigo-deep);
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin: 0 3px;
+}

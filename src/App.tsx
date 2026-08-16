@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AppDataProvider } from './context/AppDataContext.tsx';
 import AppShell from './components/layout/AppShell.tsx';
-
+import UpdateToast from './components/pwa/UpdateToast.tsx';
 
 // ─── Lazy-loaded pages ────────────────────────────────────────────────────────
 
@@ -169,6 +169,21 @@ function AppRoutes() {
   );
 }
 
+// export default function App() {
+//   return (
+//     <BrowserRouter>
+//       <AuthProvider>
+//         <ToastProvider>
+//           <AppDataProvider>
+//             <AppRoutes />
+//           </AppDataProvider>
+//         </ToastProvider>
+//       </AuthProvider>
+//     </BrowserRouter>
+//   );
+// }
+
+// src/App.tsx
 export default function App() {
   return (
     <BrowserRouter>
@@ -176,6 +191,7 @@ export default function App() {
         <ToastProvider>
           <AppDataProvider>
             <AppRoutes />
+            <UpdateToast />   {/* ← registers the SW globally, independent of auth */}
           </AppDataProvider>
         </ToastProvider>
       </AuthProvider>

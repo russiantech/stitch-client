@@ -576,13 +576,14 @@ const renderStep3 = () => (
                     ))}
                   </div>
 
-                  <button className={`btn btn-sm mb-3 ${form.payment_method === 'subscription' ? 'btn-light' : 'btn-outline-success'}`} 
+                  <button className={`btn btn-sm mb-3 w-100 ${form.payment_method === 'subscription' ? 'btn-light' : 'btn-outline-success'}`} 
                     onClick={ e => { e.stopPropagation(); autoAllocate(); }}>
-                    <i className="fas fa-magic me-2" />Auto-fill {totalGarmentCount} units
+                    <i className="fas fa-magic me-2 text-primary" />Auto-fill {totalGarmentCount} units
                   </button>
 
                   {totalAllocated > 0 && (
-                    <div className={`rounded-2 p-2 small ${allocationOk ? 'bg-white text-primary' : 'bg-danger text-white'}`}>
+                    // <div className={`rounded-2 p-2 small ${allocationOk ? 'bg-white text-primary' : 'bg-danger text-white'}`}>
+                    <div className={`rounded-2 p-2 small ${allocationOk ? 'text-primary' : 'bg-danger text-white'}`}>
                       {allocationOk
                         ? <><i className="fas fa-check-circle me-1" />{totalAllocated} units across {Object.values(subAllocations).filter(v => v > 0).length} plan(s) — ready!</>
                         : <><i className="fas fa-exclamation-circle me-1" />Need {totalGarmentCount}, allocated {totalAllocated} — {totalGarmentCount - totalAllocated} more needed</>}
@@ -705,6 +706,7 @@ const renderStep3 = () => (
       Deliberately only allows jumping backward to a completed step (not forward, skipping validation) — 
       this satisfies "directly clickable to navigate/edit a section" without letting someone bypass required fields.
       */}
+
     <div className="d-flex align-items-center mb-5" data-tour="tour-order-steps">
       {STEPS.map((s, i) => (
         <React.Fragment key={s}>

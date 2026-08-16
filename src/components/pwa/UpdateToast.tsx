@@ -1,39 +1,5 @@
 // // src/components/pwa/UpdateToast.tsx
-// /* 
 // 6. Update notification — quiet, never forces a reload mid-session
-// */
-// import { useRegisterSW } from 'virtual:pwa-register/react';
-
-// export default function UpdateToast() {
-//   const {
-//     needRefresh: [needRefresh, setNeedRefresh],
-//     updateServiceWorker,
-//   } = useRegisterSW({
-//     onRegisteredSW(_url, registration) {
-//       registration && setInterval(() => registration.update(), 60 * 60 * 1000); // hourly check, silent
-//     },
-//   });
-
-//   if (!needRefresh) return null;
-
-//   return (
-//     <div
-//       className="bg-white rounded-3 shadow-lg p-3"
-//       style={{ position: 'fixed', bottom: 20, right: 20, maxWidth: 300, border: '1px solid rgba(0,0,0,0.08)', zIndex: 1500 }}
-//       role="status"
-//       aria-live="polite"
-//     >
-//       <div className="fw-semibold" style={{ fontSize: 13, fontFamily: 'var(--font-heading)' }}>Update available</div>
-//       <p className="text-muted mb-2" style={{ fontSize: 12 }}>A new version of Stitch is ready.</p>
-//       <button className="btn btn-sm btn-primary" style={{ fontSize: 12 }} onClick={() => updateServiceWorker(true)}>Refresh</button>
-//       <button className="btn btn-sm btn-outline-secondary ms-2" style={{ fontSize: 12 }} onClick={() => setNeedRefresh(false)}>Later</button>
-//     </div>
-//   );
-// }
-
-
-
-
 
 // v2
 // src/components/pwa/UpdateToast.tsx
