@@ -9,7 +9,10 @@ import '@/styles/LandingPage.css';
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────── */
 const StitchMark = ({ className = '' }: { className?: string }) => (
-  <img src="/images/logos/stitch-logo.png" style={{ width:200, height:38, marginRight:8 }} alt="Stitch Mark" className={className} />
+  <div className={`stitch-mark border rounded p-2 bg-white text-primary ${className}`} style={{ display: 'flex', alignItems: 'center' }}>
+  <img src="/images/pwa/stitch-s-icon-darkpurple-192x192.png" style={{ width:200, height:58, }} alt="Stitch Mark" className={className} />
+  Stitch
+  </div>
 );
 
 const Check = ({ size = 18 }: { size?: number }) => (
@@ -676,7 +679,7 @@ const Footer = () => (
       <div className="foot-grid">
         <div className="foot-brand">
           <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <StitchMark className="mark1" />
+            <StitchMark className="mark1" /> 
           </a>
           <p>Digitizing Nigeria's informal laundry & fashion economy — one order, one measurement, one payment at a time. A product of Miva Innovators.</p>
         </div>

@@ -372,33 +372,33 @@ export const paymentService = {
 
 // ─── PRICING (prefix "/pricing", routes doubled "/pricing/...") ──────────────
 export const pricingService = {
-  garments: () => unwrap<GarmentType[]>('/pricing/garments'),
+  // Pricing Services
+  // Garments
+  garments: (includeInactive = false) => unwrap<GarmentType[]>(`/pricing/garments${includeInactive ? '?include_inactive=true' : ''}`),
   createGarment: (d: Partial<GarmentType> & { name: string; category: string; base_price: number }) => unwrap<GarmentType>('/pricing/garments', { method: 'POST', json: d }),
   updateGarment: (id: string, d: Partial<GarmentType>) => unwrap<GarmentType>(`/pricing/garments/${id}`, { method: 'PUT', json: d }),
   deleteGarment: (id: string) => apiRequest(`/pricing/garments/${id}`, { method: 'DELETE' }),
+  hideGarment: (id: string) => apiRequest(`/pricing/garments/${id}/hide`, { method: 'POST' }),
+  unhideGarment: (id: string) => apiRequest(`/pricing/garments/${id}/unhide`, { method: 'POST' }),
 
-  services: () => unwrap<LaundryService[]>('/pricing/services'),
+  // Services(Laundry)
+  services: (includeInactive = false) => unwrap<LaundryService[]>(`/pricing/services${includeInactive ? '?include_inactive=true' : ''}`),
   createService: (d: Partial<LaundryService> & { name: string }) => unwrap<LaundryService>('/pricing/services', { method: 'POST', json: d }),
   updateService: (id: string, d: Partial<LaundryService>) => unwrap<LaundryService>(`/pricing/services/${id}`, { method: 'PUT', json: d }),
   deleteService: (id: string) => apiRequest(`/pricing/services/${id}`, { method: 'DELETE' }),
+  hideService: (id: string) => apiRequest(`/pricing/services/${id}/hide`, { method: 'POST' }),
+  unhideService: (id: string) => apiRequest(`/pricing/services/${id}/unhide`, { method: 'POST' }),
 
-  areas: () => unwrap<DeliveryArea[]>('/pricing/areas'),
+  // Areas
+  areas: (includeInactive = false) => unwrap<DeliveryArea[]>(`/pricing/areas${includeInactive ? '?include_inactive=true' : ''}`),
   createArea: (d: Partial<DeliveryArea> & { name: string; price: number }) => unwrap<DeliveryArea>('/pricing/areas', { method: 'POST', json: d }),
   updateArea: (id: string, d: Partial<DeliveryArea>) => unwrap<DeliveryArea>(`/pricing/areas/${id}`, { method: 'PUT', json: d }),
   deleteArea: (id: string) => apiRequest(`/pricing/areas/${id}`, { method: 'DELETE' }),
+  hideArea: (id: string) => apiRequest(`/pricing/areas/${id}/hide`, { method: 'POST' }),
+  unhideArea: (id: string) => apiRequest(`/pricing/areas/${id}/unhide`, { method: 'POST' }),
 
-  // 
-  // fashionFees: () => unwrap<{ consultation_fee: number; material_pickup_fee: number; consultation_fee_enabled: boolean; material_pickup_fee_enabled: boolean }>('/pricing/fashion-fees'),
-  // updateFashionFees: (d: { consultation_fee?: number; material_pickup_fee?: number; 
-  //   consultation_fee_enabled?: boolean; material_pickup_fee_enabled?: boolean }) => unwrap<{ 
-  //   consultation_fee: number; material_pickup_fee: number; consultation_fee_enabled: boolean; 
-  //   material_pickup_fee_enabled: boolean 
-  // }>('/pricing/fashion-fees', { method: 'PUT', json: d }),
-  deleteFashionFees: () => apiRequest('/pricing/fashion-fees', { method: 'DELETE' }),
-
-  // 
-  fashionServices: (includeInactive = false) =>
-    unwrap<FashionService[]>(`/pricing/fashion-services${includeInactive ? '?include_inactive=true' : ''}`),
+  // Fashion
+  fashionServices: (includeInactive = false) => unwrap<FashionService[]>(`/pricing/fashion-services${includeInactive ? '?include_inactive=true' : ''}`),
   createFashionService: (data: { name: string; description?: string; icon?: string; display_order?: number }) =>
     unwrap<FashionService>('/pricing/fashion-services', { method: 'POST', json: data }),
   updateFashionService: (id: string, data: Partial<FashionService>) =>
@@ -406,24 +406,10 @@ export const pricingService = {
   deleteFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}`, { method: 'DELETE' }),
   fashionFees: () => unwrap<FashionFees>('/pricing/fashion-fees'),
   updateFashionFees: (data: Partial<FashionFees>) => unwrap<FashionFees>('/pricing/fashion-fees', { method: 'PUT', json: data }),
-  // 
+  deleteFashionFees: () => apiRequest('/pricing/fashion-fees', { method: 'DELETE' }),
+
   hideFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}/hide`, { method: 'POST' }),
   unhideFashionService: (id: string) => apiRequest(`/pricing/fashion-services/${id}/unhide`, { method: 'POST' }),
-  
-  // v2
-  // // pricingService additions
-  // fashionServices: (includeInactive = false) =>
-  //   unwrap<Array<FashionService & { is_global: boolean }>>(`/pricing/fashion-services${includeInactive ? '?include_inactive=true' : ''}`),
-  // createFashionService: (data: { name: string; description?: string; icon?: string; display_order?: number }) =>
-  //   unwrap<FashionService>('/pricing/fashion-services', { method: 'POST', json: data }),
-  // updateFashionService: (id: string, data: Partial<FashionService>) =>
-  //   unwrap<FashionService>(`/pricing/fashion-services/${id}`, { method: 'PUT', json: data }),
-  // deleteFashionService: (id: string) =>
-  //   apiRequest(`/pricing/fashion-services/${id}`, { method: 'DELETE' }),
-  // hideFashionService: (id: string) =>
-  //   apiRequest(`/pricing/fashion-services/${id}/hide`, { method: 'POST' }),
-  // unhideFashionService: (id: string) =>
-  //   apiRequest(`/pricing/fashion-services/${id}/unhide`, { method: 'POST' }),
 
 };
 

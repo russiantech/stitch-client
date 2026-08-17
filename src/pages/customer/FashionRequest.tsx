@@ -7,6 +7,7 @@ import { useToast } from '@/context/ToastContext.tsx';
 import { orderService, pricingService, paymentService } from '@/services/api.ts';
 import { useAuth } from '@/context/AuthContext.tsx';
 import type { FashionService, MeasurementsData, FilePreview } from '@/types/index.ts';
+import { calcFashionFees, feeApplies } from '@/utils/fashionFees';
 
 const errMsg = (err: unknown): string => (err instanceof Error ? err.message : 'Something went wrong');
 
@@ -38,28 +39,28 @@ const EMPTY_FEES: FashionFees = {
 // One shared function — used for BOTH the per-service hint text on step 0
 // AND the final total calculation, so there is exactly one source of truth
 // for "does this fee apply" and it can never silently disagree with itself.
-function feeApplies(enabled: boolean, appliesTo: string[] | null, selected: string[]): boolean {
-  if (!enabled) return false;
-  if (!appliesTo || appliesTo.length === 0) return true; // no restriction = applies to all services
-  return selected.some(s => appliesTo.includes(s));
-}
+// function feeApplies(enabled: boolean, appliesTo: string[] | null, selected: string[]): boolean {
+//   if (!enabled) return false;
+//   if (!appliesTo || appliesTo.length === 0) return true; // no restriction = applies to all services
+//   return selected.some(s => appliesTo.includes(s));
+// }
 
-function calcFees(fees: FashionFees, selectedServices: string[]) {
-  const consultation = feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, selectedServices) ? fees.consultation_fee : 0;
-  const materialPickup = feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, selectedServices) ? fees.material_pickup_fee : 0;
-  return { consultation, materialPickup, total: consultation + materialPickup };
-}
+// function calcFees(fees: FashionFees, selectedServices: string[]) {
+//   const consultation = feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, selectedServices) ? fees.consultation_fee : 0;
+//   const materialPickup = feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, selectedServices) ? fees.material_pickup_fee : 0;
+//   return { consultation, materialPickup, total: consultation + materialPickup };
+// }
 
-function serviceFeeHint(fees: FashionFees, serviceName: string): string {
-  const parts: string[] = [];
-  if (feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, [serviceName])) {
-    parts.push(`${formatNGN(fees.consultation_fee)} consultation`);
-  }
-  if (feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, [serviceName])) {
-    parts.push(`${formatNGN(fees.material_pickup_fee)} pickup`);
-  }
-  return parts.length > 0 ? `+${parts.join(' + ')}` : 'No extra fees';
-}
+// function serviceFeeHint(fees: FashionFees, serviceName: string): string {
+//   const parts: string[] = [];
+//   if (feeApplies(fees.consultation_fee_enabled, fees.consultation_applies_to, [serviceName])) {
+//     parts.push(`${formatNGN(fees.consultation_fee)} consultation`);
+//   }
+//   if (feeApplies(fees.material_pickup_fee_enabled, fees.material_pickup_applies_to, [serviceName])) {
+//     parts.push(`${formatNGN(fees.material_pickup_fee)} pickup`);
+//   }
+//   return parts.length > 0 ? `+${parts.join(' + ')}` : 'No extra fees';
+// }
 
 interface FashionPendingPayload {
   service_types: string[];
@@ -178,7 +179,7 @@ export default function FashionRequest() {
   }, []);
 
   const { consultation: consultationFee, materialPickup: materialPickupFee, total: totalAmount } = useMemo(
-    () => calcFees(fees, form.services), [fees, form.services],
+    () => calcFashionFees(fees, form.services), [fees, form.services],
   );
 
   const toggleService = (name: string) =>
@@ -513,7 +514,7 @@ export default function FashionRequest() {
               </div>
             )}
 
-            {/* ── Fee breakdown — driven by the same fees/calcFees used on step 0 ── */}
+            {/* ── Fee breakdown — driven by the same fees/calcFashionFees used on step 0 ── */}
             <div className="mt-3 pt-3 border-top border-light">
               {consultationFee > 0 && (
                 <div className="d-flex justify-content-between small mb-1">

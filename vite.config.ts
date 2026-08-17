@@ -13,7 +13,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt', // we control the update prompt ourselves — see UpdateToast below
-      includeAssets: ['favicon.ico', 'images/logos/apple-touch-icon.png'],
+      includeAssets: ['images/pwa/stitch-s-icon-darkpurple-192x192.png', 'images/pwa/stitch-s-icon-darkpurple-512x512.png', 'favicon.ico', 'images/logos/apple-touch-icon.png'],
       manifest: {
         name: 'Stitch — Digitizing the informal sector.',
         short_name: 'Stitch',
@@ -26,9 +26,9 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         icons: [
-          { src: '/images/pwa/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/images/pwa/stitch-s-icon-purple.png', sizes: '512x512', type: 'image/png' },
-          { src: '/images/pwa/stitch-medical-icon-purple.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/images/pwa/stitch-s-icon-darkpurple-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/images/pwa/stitch-s-icon-darkpurple-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/images/pwa/stitch-s-icon-darkpurple-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
