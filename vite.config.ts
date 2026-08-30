@@ -22,9 +22,13 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        // start_url: '/dashboard',
-        start_url: '/',
-        scope: '/',
+
+        // start_url: '/',
+        // scope: '/',
+
+        start_url: '/dashboard',
+        // scope: '/dashboard',
+
         icons: [
           { src: '/images/pwa/stitch-s-icon-darkpurple-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: '/images/pwa/stitch-s-icon-darkpurple-512x512.png', sizes: '512x512', type: 'image/png' },

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext.tsx';
 import { subscriptionService } from '@/services/api.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import PasswordInput from '@/components/shared/PasswordInput.tsx';
+import StitchMark from '@/components/shared/StitchMark.tsx';
 
 export default function SignIn() {
   const [identifier, setIdentifier] = useState('');
@@ -54,11 +55,15 @@ export default function SignIn() {
 
   return (
     <div className="auth-wrapper">
-      <div className="auth-card">
+      <div className="auth-card" style={{ maxWidth: 460 }}>
         <div className="text-center mb-4">
           <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
             <Link to="/" className="text-decoration-none text-primary">
-            <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" />
+            {/* <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" /> */}
+             <StitchMark
+              // src="/images/logos/stitch-logo.png"   // ← override for auth pages
+              className="auth-logo"
+            />
             </Link>
           </div>
           <p className="text-muted small mb-0">Digital infrastructure for Nigeria's laundry & fashion economy</p>

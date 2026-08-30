@@ -5,6 +5,7 @@ import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext.tsx';
 import { getNavRole } from '@/utils/roles.ts';
+import StitchMark from '@/components/shared/StitchMark.tsx';
 
 interface NavItem { to?: string; icon?: string; label: string; section?: boolean; }
 
@@ -84,8 +85,11 @@ export default function Sidebar({ show, onClose }: { show: boolean; onClose: () 
           {/* <span className="brand-scissors1">
             <img src="/images/logos/favicon.ico" alt="Stitch" style={{ width:28, height:28, marginRight:8 }} />
             </span>Stitch */}
-
-            <img src="/images/logos/stitch-logo.png" alt="Stitch" style={{ width:200, height:38, marginRight:8 }} />
+            {/* <img src="/images/logos/stitch-logo.png" alt="Stitch" style={{ width:200, height:38, marginRight:8 }} /> */}
+            <StitchMark
+              // src="/images/logos/stitch-logo.png"   // ← override for sidebar pages
+              className="auth-logo"
+            />
           
         </Link>
         <div className="px-4 py-3 border-bottom">

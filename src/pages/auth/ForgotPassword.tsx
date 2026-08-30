@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '@/services/api.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import PasswordInput from '@/components/shared/PasswordInput.tsx';
+import StitchMark from '@/components/shared/StitchMark.tsx';
 
 type ForgotPasswordStep = 'request' | 'verify' | 'reset';
 
@@ -131,8 +132,10 @@ export default function ForgotPassword() {
   const BrandHeader = () => (
     <div className="text-center mb-4">
       <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-        {/* <span className="brand-scissors me-2"><i className="fas fa-scissors" /></span>Stitch */}
-        <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" />
+         <StitchMark
+              // src="/images/logos/stitch-logo.png"   // ← override for auth pages
+              className="auth-logo"
+            />
       </div>
       <p className="text-muted small mb-0">Digital infrastructure for Nigeria's laundry & fashion economy</p>
     </div>

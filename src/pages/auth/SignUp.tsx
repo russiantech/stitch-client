@@ -4,6 +4,7 @@ import { authService, orgService } from '@/services/api.ts';
 // import type { SignupPayload } from '@/services/api.ts';
 import { useToast } from '@/context/ToastContext.tsx';
 import PasswordInput from '@/components/shared/PasswordInput.tsx';
+import StitchMark from '@/components/shared/StitchMark.tsx';
 import { SignupPayload } from '@/types';
 
 // ── Mode derives from URL, never from user input ──────────────────────────────
@@ -189,7 +190,10 @@ export default function SignUp() {
       <div className="fs-3 text-primary fw-bold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
         {/* <span className="brand-scissors me-2"><i className="fas fa-scissors" /></span>Stitch */}
         <Link to="/">
-          <img src="/images/logos/stitch-logo.png" width="200" alt="Stitch Logo" />
+           <StitchMark
+              // src="/images/logos/stitch-logo.png"   // ← override for auth pages
+              className="auth-logo"
+            />
         </Link>
       </div>
       <p className="text-muted small mb-0">Digital infrastructure for Nigeria's laundry & fashion economy</p>

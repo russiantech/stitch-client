@@ -4,26 +4,39 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import StitchMark from '@/components/shared/StitchMark.tsx';
 import { usePWAInstall } from '@/hooks/usePWAInstall.ts';
 import '@/styles/LandingPage.css';
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────── */
-const StitchMark = ({ className = '' }: { className?: string }) => (
-  <div className={`stitch-mark border rounded p-2 bg-white text-primary ${className}`} style={{ display: 'flex', alignItems: 'center' }}>
-  <img src="/images/pwa/stitch-s-icon-darkpurple-192x192.png" style={{ width:200, height:58, }} alt="Stitch Mark" className={className} />
-  Stitch
+// const StitchMark = ({ className = '' }: { className?: string }) => (
+//   <div className={`stitch-mark ${className}`}>
+//     <img src="/images/logos/stitch-logo-primary.webp" alt="Stitch" className="stitch-logo-img" />
+//   </div>
+// );
+
+/* export const StitchMark = ({ 
+  className = '', 
+  src = '/images/logos/stitch-logo-primary.webp' 
+}: { 
+  className?: string; 
+  src?: string 
+}) => (
+  <div className={`stitch-mark ${className}`}>
+    <img src={src} alt="Stitch" className="stitch-logo-img" />
   </div>
 );
+ */
 
 const Check = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
 );
 
-const IconShield = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z" stroke="#5B3DF5" strokeWidth="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="#5B3DF5" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-const IconTag = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5" stroke="#FF5A46" strokeWidth="1.8" strokeLinecap="round"/></svg>;
-const IconPhone = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" stroke="#FF5A46" strokeWidth="1.8"/></svg>;
-const IconBook = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#FF5A46" strokeWidth="1.8"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#FF5A46" strokeWidth="1.8" strokeLinecap="round"/></svg>;
-const IconRuler = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="#FF5A46" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 21h18" stroke="#FF5A46" strokeWidth="1.8" strokeLinecap="round"/></svg>;
+const IconShield = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z" stroke="#5826EE" strokeWidth="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="#5826EE" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const IconTag = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5" stroke="#F38207" strokeWidth="1.8" strokeLinecap="round"/></svg>;
+const IconPhone = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" stroke="#F38207" strokeWidth="1.8"/></svg>;
+const IconBook = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#F38207" strokeWidth="1.8"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#F38207" strokeWidth="1.8" strokeLinecap="round"/></svg>;
+const IconRuler = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="#F38207" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 21h18" stroke="#F38207" strokeWidth="1.8" strokeLinecap="round"/></svg>;
 const IconScan = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>;
 const IconScale = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>;
 const IconCard = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="white" strokeWidth="1.8"/><path d="M2 10h20" stroke="white" strokeWidth="1.8"/></svg>;
@@ -251,39 +264,86 @@ function InstallButton({ variant = 'primary' }: { variant?: 'primary' | 'ghost' 
 }
 
 /* ─── Sections ──────────────────────────────────────────────────────────── */
+const NAV_LINKS = [
+  { label: 'Product', href: '#product', n: '01' },
+  { label: 'For you', href: '#how', n: '02' },
+  { label: 'Pricing', href: '#model', n: '03' },
+  { label: 'Investors', href: '#market', n: '04' },
+  { label: 'FAQ', href: '#faq', n: '05' },
+];
+
 const Nav = () => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle('nav-curtain-open', open);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const goTo = (href: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    window.setTimeout(() => document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' }), open ? 380 : 0);
+  };
+
   return (
     <header className={`stitch-nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-inner">
-        <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <StitchMark className="mark1" />
+        <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); setOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+          <StitchMark />
         </a>
-        <nav className={`nav-links ${open ? 'open' : ''}`}>
-          {[
-            { label: 'Product', href: '#product' },
-            { label: 'For you', href: '#how' },
-            { label: 'Pricing', href: '#model' },
-            { label: 'Investors', href: '#market' },
-            { label: 'FAQ', href: '#faq' },
-          ].map(l => (
-            <a key={l.href} href={l.href} onClick={(e) => { e.preventDefault(); document.querySelector(l.href)?.scrollIntoView({ behavior: 'smooth' }); setOpen(false); }}>{l.label}</a>
+        <nav className="nav-links">
+          {NAV_LINKS.map(l => (
+            <a key={l.href} href={l.href} onClick={goTo(l.href)}>{l.label}</a>
           ))}
         </nav>
         <div className="nav-cta">
           <Link to="/signin" className="btn btn-ghost btn-sm">Book a walkthrough</Link>
           <Link to="/signup" className="btn btn-primary btn-sm">Get started free</Link>
         </div>
-        <button className="menu-toggle" aria-label="Menu" onClick={() => setOpen(!open)}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#12101c" strokeWidth="2" strokeLinecap="round"/></svg>
+        <button
+          className={`bento-toggle ${open ? 'open' : ''}`}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          onClick={() => setOpen(v => !v)}
+        >
+          <span className="bento-grid">
+            {Array.from({ length: 9 }).map((_, i) => <span key={i} className="bento-dot" />)}
+          </span>
+          <span className="bento-close">
+            <span className="bl bl1" />
+            <span className="bl bl2" />
+          </span>
         </button>
+      </div>
+
+      <div className={`nav-curtain ${open ? 'open' : ''}`} aria-hidden={!open}>
+        <div className="nav-curtain-inner">
+          <nav className="curtain-links">
+            {NAV_LINKS.map(l => (
+              <a key={l.href} href={l.href} onClick={goTo(l.href)}>
+                {l.label} <span className="n">{l.n}</span>
+              </a>
+            ))}
+          </nav>
+          <div className="curtain-cta">
+            <Link to="/signup" className="btn btn-primary btn-block" onClick={() => setOpen(false)}>Get started free</Link>
+            <Link to="/signin" className="btn btn-ghost cta-ghost btn-block" onClick={() => setOpen(false)}>Book a walkthrough</Link>
+          </div>
+        </div>
+        <div className="curtain-foot">
+          <span>Stitch Labs</span>
+          <span>stitch@stitch.salesnet.ng</span>
+        </div>
       </div>
     </header>
   );
@@ -679,7 +739,7 @@ const Footer = () => (
       <div className="foot-grid">
         <div className="foot-brand">
           <a href="#top" className="brand" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <StitchMark className="mark1" /> 
+            <StitchMark src="/images/logos/stitch-logo-white.webp" className="mark111" /> 
           </a>
           <p>Digitizing Nigeria's informal laundry & fashion economy — one order, one measurement, one payment at a time. A product of Miva Innovators.</p>
         </div>
